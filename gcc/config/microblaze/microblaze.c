@@ -2531,7 +2531,7 @@ print_operand (FILE * file, rtx op, int letter)
 	  unsigned long value_long;
 	  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (op),
 				       value_long);
-	  fprintf (file, HOST_WIDE_INT_PRINT_HEX, value_long);
+	  fprintf (file, "0x%08x", (unsigned int) value_long);
 	}
       else
 	{

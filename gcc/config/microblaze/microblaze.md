@@ -1366,7 +1366,10 @@
                    (match_operand:SI 2 "immediate_operand" "I")))] 
   "!TARGET_SOFT_MUL 
    && ((1 << INTVAL (operands[2])) <= 32767 && (1 << INTVAL (operands[2])) >= -32768)"
-  "muli\t%0,%1,%m2"
+  {
+    operands[2] = gen_int_mode (1 << INTVAL (operands[2]), SImode);
+    return "muli\t%0,%1,%2";
+  }
   ;; This MUL will not generate an imm. Can go into a delay slot.
   [(set_attr "type"	"arith")
    (set_attr "mode"	"SI")
@@ -1378,7 +1381,10 @@
 	(ashift:SI (match_operand:SI 1 "register_operand"  "d")
                    (match_operand:SI 2 "immediate_operand" "I")))] 
   "!TARGET_SOFT_MUL"
-  "muli\t%0,%1,%m2"
+  {
+    operands[2] = gen_int_mode (1 << INTVAL (operands[2]), SImode);
+    return "muli\t%0,%1,%2";
+  }
   ;; This MUL will generate an IMM. Cannot go into a delay slot
   [(set_attr "type"	"no_delay_arith")
    (set_attr "mode"	"SI")
