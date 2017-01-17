@@ -1466,10 +1466,8 @@ gain_for_invariant (struct invariant *inv, unsigned *regs_needed,
 
   if (! flag_ira_loop_pressure)
     {
-      size_cost = (estimate_reg_pressure_cost (new_regs[0] + regs_needed[0],
-					       regs_used, speed, call_p)
-		   - estimate_reg_pressure_cost (new_regs[0],
-						 regs_used, speed, call_p));
+      size_cost = estimate_reg_pressure_cost (regs_needed[0],
+					       regs_used, speed, call_p);
     }
   else if (ret < 0)
     return -1;
