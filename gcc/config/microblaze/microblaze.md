@@ -500,17 +500,16 @@
 ;; Adding 2 DI operands in register or reg/imm
 
 (define_insn "adddi3"
-  [(set (match_operand:DI 0 "register_operand" "=d,d,d")
-	(plus:DI (match_operand:DI 1 "register_operand" "%d,d,d")
-		 (match_operand:DI 2 "arith_operand32" "d,P,N")))]
+  [(set (match_operand:DI 0 "register_operand" "=d,d")
+	(plus:DI (match_operand:DI 1 "register_operand" "%d,d")
+		 (match_operand:DI 2 "arith_operand" "d,i")))]
   ""
   "@
   add\t%L0,%L1,%L2\;addc\t%M0,%M1,%M2
-  addi\t%L0,%L1,%2\;addc\t%M0,%M1,r0
-  addi\t%L0,%L1,%2\;addc\t%M0,%M1,r0\;addi\t%M0,%M0,-1"
+  addi\t%L0,%L1,%j2\;addic\t%M0,%M1,%h2"
   [(set_attr "type"	"darith")
   (set_attr "mode"	"DI")
-  (set_attr "length"	"8,8,12")])
+  (set_attr "length"	"8,8")])
 
 ;;----------------------------------------------------------------
 ;; Subtraction
@@ -547,7 +546,7 @@
 (define_insn "subdi3"
   [(set (match_operand:DI 0 "register_operand" "=&d")
 	(minus:DI (match_operand:DI 1 "register_operand" "d")
-		  (match_operand:DI 2 "arith_operand32" "d")))]
+		  (match_operand:DI 2 "register_operand" "d")))]
   ""
   "rsub\t%L0,%L2,%L1\;rsubc\t%M0,%M2,%M1"
   [(set_attr "type"	"darith")
