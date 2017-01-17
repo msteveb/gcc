@@ -434,9 +434,9 @@ extern struct microblaze_frame_info current_frame_info;
 
 #define ARG_POINTER_CFA_OFFSET(FNDECL)		0
 
-#define REG_PARM_STACK_SPACE(FNDECL)  		(MAX_ARGS_IN_REGISTERS * UNITS_PER_WORD)
+#define REG_PARM_STACK_SPACE(FNDECL)  		 microblaze_reg_parm_stack_space(FNDECL)
 
-#define OUTGOING_REG_PARM_STACK_SPACE(FNTYPE)	1
+#define OUTGOING_REG_PARM_STACK_SPACE(FNTYPE)  1
 
 #define STACK_BOUNDARY				32
 
