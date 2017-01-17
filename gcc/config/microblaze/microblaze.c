@@ -1772,6 +1772,19 @@ microblaze_option_override (void)
           warning (0, "-mxl-reorder requires -mxl-pattern-compare for -mcpu=v8.30.a");
         TARGET_REORDER = 0;
     }
+  ver = ver_int - microblaze_version_to_int("v10.0");
+  if (ver < 0)
+    {
+        if (TARGET_AREA_OPTIMIZED_2)
+          warning (0, "-mxl-frequency can be used only with -mcpu=v10.0 or greater");
+    }
+  else
+    {
+        if (TARGET_AREA_OPTIMIZED_2)
+          microblaze_pipe = MICROBLAZE_PIPE_8;
+        if (TARGET_BARREL_SHIFT)
+          microblaze_has_bitfield = 1;
+    }
 
   if (TARGET_MULTIPLY_HIGH && TARGET_SOFT_MUL)
     error ("-mxl-multiply-high requires -mno-xl-soft-mul");
