@@ -3769,7 +3769,7 @@ microblaze_expand_divide (rtx operands[])
   emit_insn (gen_ashlsi3_bshift (regt1, operands[1], GEN_INT(4)));
   emit_insn (gen_addsi3 (regt1, regt1, operands[2]));
   mem_rtx = gen_rtx_MEM (QImode,
-                            gen_rtx_PLUS (Pmode, regt1, div_table_rtx));
+                            gen_rtx_PLUS (QImode, regt1, div_table_rtx));
 
   insn = emit_insn (gen_zero_extendqisi2(operands[0],mem_rtx));
   jump = emit_jump_insn_after (gen_jump (div_end_label), insn); 
