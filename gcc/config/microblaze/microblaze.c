@@ -163,6 +163,9 @@ int microblaze_no_unsafe_delay;
 /* Set to one if the targeted core has the CLZ insn.  */
 int microblaze_has_clz = 0;
 
+/* Set to one if the targeted core has barrel-shift and cpu > 10.0 */
+int microblaze_has_bitfield = 0;
+
 /* Which CPU pipeline do we use. We haven't really standardized on a CPU 
    version having only a particular type of pipeline. There can still be 
    options on the CPU to scale pipeline features up or down. :( 

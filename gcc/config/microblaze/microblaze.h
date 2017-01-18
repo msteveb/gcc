@@ -44,6 +44,7 @@ extern int microblaze_dbx_regno[];
 
 extern int microblaze_no_unsafe_delay;
 extern int microblaze_has_clz;
+extern int microblaze_has_bitfield;
 extern enum pipeline_type microblaze_pipe;
 
 #define OBJECT_FORMAT_ELF
@@ -62,6 +63,7 @@ extern enum pipeline_type microblaze_pipe;
 
 /* Do we have CLZ?  */
 #define TARGET_HAS_CLZ      (TARGET_PATTERN_COMPARE && microblaze_has_clz)
+#define TARGET_HAS_BITFIELD      (TARGET_BARREL_SHIFT && microblaze_has_bitfield)
 
 /* The default is to support PIC.  */
 #define TARGET_SUPPORTS_PIC 1
