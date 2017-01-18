@@ -411,7 +411,9 @@ estimate_reg_pressure_cost (unsigned n_new, unsigned n_old, bool speed,
   if (regs_needed + target_res_regs <= available_regs)
     return 0;
 
-  if (regs_needed <= available_regs)
+  if ((regs_needed <= available_regs)
+      || (call_p && (regs_needed <=
+          (available_regs + target_clobbered_regs))))
     /* If we are close to running out of registers, try to preserve
        them.  */
     cost = target_reg_cost [speed] * n_new;
