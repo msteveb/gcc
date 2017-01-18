@@ -2517,14 +2517,18 @@ print_operand (FILE * file, rtx op, int letter)
   else if (letter == 'h' || letter == 'j')
     {
       long val[2];
+      long l[2];
       if (code == CONST_DOUBLE)
 	{
 	  if (GET_MODE (op) == DFmode)
 	    REAL_VALUE_TO_TARGET_DOUBLE (*CONST_DOUBLE_REAL_VALUE (op), val);
 	  else
 	    {
-	      val[0] = CONST_DOUBLE_HIGH (op);
-	      val[1] = CONST_DOUBLE_LOW (op);
+	      REAL_VALUE_TYPE rv;
+	      REAL_VALUE_FROM_CONST_DOUBLE (rv, op);
+	      REAL_VALUE_TO_TARGET_DOUBLE (rv, l);
+	      val[1] = l[WORDS_BIG_ENDIAN == 0];
+	      val[0] = l[WORDS_BIG_ENDIAN != 0];
 	    }
 	}
       else if (code == CONST_INT)
