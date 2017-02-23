@@ -2076,10 +2076,10 @@
   ""
   { 
     rtx retaddr = gen_rtx_MEM (Pmode, stack_pointer_rtx);
-    rtx rtmp    = gen_rtx_REG (SImode, R_TMP);
+    rtx reg = gen_reg_rtx (Pmode);
     rtx neg_op0;
 
-    emit_move_insn (rtmp, retaddr);
+    emit_move_insn (reg, retaddr);
     if (GET_CODE (operands[1]) != CONST_INT)
     {
         neg_op0 = gen_reg_rtx (Pmode);
@@ -2088,9 +2088,9 @@
         neg_op0 = GEN_INT (- INTVAL (operands[1]));
 
     emit_insn (gen_addsi3 (stack_pointer_rtx, stack_pointer_rtx, neg_op0));
-    emit_move_insn (gen_rtx_MEM (Pmode, stack_pointer_rtx), rtmp);
+    emit_move_insn (gen_rtx_MEM (Pmode, stack_pointer_rtx), reg);
     emit_move_insn (operands[0], virtual_stack_dynamic_rtx);
-    emit_insn (gen_rtx_CLOBBER (SImode, rtmp));
+    emit_insn (gen_rtx_CLOBBER (SImode, reg));
     DONE;
   }
 )
