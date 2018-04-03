@@ -3457,11 +3457,11 @@ microblaze_expand_move (machine_mode mode, rtx operands[])
   op0 = operands[0];
   op1 = operands[1];
 
-  if (!register_operand (op0, SImode)
-      && !register_operand (op1, SImode)
+  if (!register_operand (op0, mode)
+      && !register_operand (op1, mode)
       && (GET_CODE (op1) != CONST_INT || INTVAL (op1) != 0))
     {
-      rtx temp = force_reg (SImode, op1);
+      rtx temp = force_reg (mode, op1);
       emit_move_insn (op0, temp);
       return true;
     }
@@ -3499,12 +3499,12 @@ microblaze_expand_move (machine_mode mode, rtx operands[])
 	          && (flag_pic == 2 || microblaze_tls_symbol_p (p0)
 		      || !SMALL_INT (p1)))))
 	{
-	  rtx temp = force_reg (SImode, p0);
+	  rtx temp = force_reg (mode, p0);
 	  rtx temp2 = p1;
 
 	  if (flag_pic && reload_in_progress)
 	    df_set_regs_ever_live (PIC_OFFSET_TABLE_REGNUM, true);
-	  emit_move_insn (op0, gen_rtx_PLUS (SImode, temp, temp2));
+	  emit_move_insn (op0, gen_rtx_PLUS (mode, temp, temp2));
 	  return true;
 	}
     }
@@ -3635,7 +3635,7 @@ microblaze_expand_conditional_branch (machine_mode mode, rtx operands[])
   rtx cmp_op0 = operands[1];
   rtx cmp_op1 = operands[2];
   rtx label1 = operands[3];
-  rtx comp_reg = gen_reg_rtx (SImode);
+  rtx comp_reg = gen_reg_rtx (mode);
   rtx condition;
 
   gcc_assert ((GET_CODE (cmp_op0) == REG) || (GET_CODE (cmp_op0) == SUBREG));
@@ -3644,23 +3644,36 @@ microblaze_expand_conditional_branch (machine_mode mode, rtx operands[])
   if (cmp_op1 == const0_rtx)
     {
       comp_reg = cmp_op0;
-      condition = gen_rtx_fmt_ee (signed_condition (code), SImode, comp_reg, const0_rtx);
-      emit_jump_insn (gen_condjump (condition, label1));
+      condition = gen_rtx_fmt_ee (signed_condition (code), mode, comp_reg, const0_rtx);
+      if (mode == SImode)
+        emit_jump_insn (gen_condjump (condition, label1));
+      else
+        emit_jump_insn (gen_long_condjump (condition, label1));
+
     }
 
   else if (code == EQ || code == NE)
     {
       /* Use xor for equal/not-equal comparison.  */
-      emit_insn (gen_xorsi3 (comp_reg, cmp_op0, cmp_op1));
-      condition = gen_rtx_fmt_ee (signed_condition (code), SImode, comp_reg, const0_rtx);
-      emit_jump_insn (gen_condjump (condition, label1));
+      if (mode == SImode)
+        emit_insn (gen_xorsi3 (comp_reg, cmp_op0, cmp_op1));
+      else
+        emit_insn (gen_xordi3 (comp_reg, cmp_op0, cmp_op1));
+      condition = gen_rtx_fmt_ee (signed_condition (code), mode, comp_reg, const0_rtx);
+      if (mode == SImode)
+        emit_jump_insn (gen_condjump (condition, label1));
+      else
+        emit_jump_insn (gen_long_condjump (condition, label1));
     }
   else
     {
       /* Generate compare and branch in single instruction. */
       cmp_op1 = force_reg (mode, cmp_op1);
       condition = gen_rtx_fmt_ee (code, mode, cmp_op0, cmp_op1);
-      emit_jump_insn (gen_branch_compare(condition, cmp_op0, cmp_op1, label1));
+      if (mode == SImode)
+        emit_jump_insn (gen_branch_compare(condition, cmp_op0, cmp_op1, label1));
+      else
+        emit_jump_insn (gen_long_branch_compare(condition, cmp_op0, cmp_op1, label1));
     }
 }
 
@@ -3671,7 +3684,7 @@ microblaze_expand_conditional_branch_reg (machine_mode mode, rtx operands[])
   rtx cmp_op0 = operands[1];
   rtx cmp_op1 = operands[2];
   rtx label1 = operands[3];
-  rtx comp_reg = gen_reg_rtx (SImode);
+  rtx comp_reg = gen_reg_rtx (mode);
   rtx condition;
 
   gcc_assert ((GET_CODE (cmp_op0) == REG)
@@ -3682,30 +3695,63 @@ microblaze_expand_conditional_branch_reg (machine_mode mode, rtx operands[])
     {
       comp_reg = cmp_op0;
       condition = gen_rtx_fmt_ee (signed_condition (code),
-                                  SImode, comp_reg, const0_rtx);
-      emit_jump_insn (gen_condjump (condition, label1));
+                                  mode, comp_reg, const0_rtx);
+      if (mode == SImode)
+        emit_jump_insn (gen_condjump (condition, label1));
+      else
+        emit_jump_insn (gen_long_condjump (condition, label1));
     }
   else if (code == EQ)
     {
-      emit_insn (gen_seq_internal_pat (comp_reg,
-                                       cmp_op0, cmp_op1));
-      condition = gen_rtx_EQ (SImode, comp_reg, const0_rtx);
-      emit_jump_insn (gen_condjump (condition, label1));
+      if (mode == SImode)
+        {
+          emit_insn (gen_seq_internal_pat (comp_reg, cmp_op0,
+                                           cmp_op1));
+	}
+      else
+        {
+          emit_insn (gen_seq_internal_pat (comp_reg, cmp_op0,
+                                           cmp_op1));
+	}
+      condition = gen_rtx_EQ (mode, comp_reg, const0_rtx);
+      if (mode == SImode)
+        emit_jump_insn (gen_condjump (condition, label1));
+      else
+        emit_jump_insn (gen_long_condjump (condition, label1));
+ 
     }
   else if (code == NE)
     {
-      emit_insn (gen_sne_internal_pat (comp_reg, cmp_op0,
-                                       cmp_op1));
-      condition = gen_rtx_NE (SImode, comp_reg, const0_rtx);
-      emit_jump_insn (gen_condjump (condition, label1));
+      if (mode == SImode)
+        {
+          emit_insn (gen_sne_internal_pat (comp_reg, cmp_op0,
+                                           cmp_op1));
+	}
+      else
+        {
+          emit_insn (gen_sne_internal_pat (comp_reg, cmp_op0,
+                                           cmp_op1));
+	}
+      condition = gen_rtx_NE (mode, comp_reg, const0_rtx);
+      if (mode == SImode)
+        emit_jump_insn (gen_condjump (condition, label1));
+      else
+        emit_jump_insn (gen_long_condjump (condition, label1));
     }
   else
     {
       /* Generate compare and branch in single instruction. */
       cmp_op1 = force_reg (mode, cmp_op1);
       condition = gen_rtx_fmt_ee (code, mode, cmp_op0, cmp_op1);
-      emit_jump_insn (gen_branch_compare (condition, cmp_op0,
-                                         cmp_op1, label1));
+      if (mode == SImode)
+        emit_jump_insn (gen_branch_compare (condition, cmp_op0,
+                                           cmp_op1, label1));
+      else 
+	{
+          emit_jump_insn (gen_long_branch_compare (condition, cmp_op0,
+                                             cmp_op1, label1));
+        }	
+
     }
 }
 
@@ -3720,6 +3766,19 @@ microblaze_expand_conditional_branch_sf (rtx operands[])
   emit_insn (gen_cstoresf4 (comp_reg, operands[0], cmp_op0, cmp_op1));
   condition = gen_rtx_NE (SImode, comp_reg, const0_rtx);
   emit_jump_insn (gen_condjump (condition, operands[3]));
+}
+
+void
+microblaze_expand_conditional_branch_df (rtx operands[])
+{
+  rtx condition;
+  rtx cmp_op0 = XEXP (operands[0], 0);
+  rtx cmp_op1 = XEXP (operands[0], 1);
+  rtx comp_reg = gen_reg_rtx (DImode);
+
+  emit_insn (gen_cstoredf4 (comp_reg, operands[0], cmp_op0, cmp_op1));
+  condition = gen_rtx_NE (DImode, comp_reg, const0_rtx);
+  emit_jump_insn (gen_long_condjump (condition, operands[3]));
 }
 
 /* Implement TARGET_FRAME_POINTER_REQUIRED.  */

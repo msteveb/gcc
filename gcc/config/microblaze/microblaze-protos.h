@@ -35,6 +35,7 @@ extern void microblaze_expand_divide (rtx *);
 extern void microblaze_expand_conditional_branch (enum machine_mode, rtx *);
 extern void microblaze_expand_conditional_branch_reg (machine_mode, rtx *);
 extern void microblaze_expand_conditional_branch_sf (rtx *); 
+extern void microblaze_expand_conditional_branch_df (rtx *); 
 extern int microblaze_can_use_return_insn (void);
 extern void print_operand (FILE *, rtx, int);
 extern void print_operand_address (FILE *, rtx);

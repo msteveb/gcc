@@ -495,7 +495,6 @@
   (set_attr "mode"      "SF")
   (set_attr "length"    "4")])
 
-
 (define_insn "divsf3"
   [(set (match_operand:SF 0 "register_operand" "=d")
         (div:SF (match_operand:SF 1 "register_operand" "d")
@@ -505,6 +504,7 @@
   [(set_attr "type"     "fdiv")
   (set_attr "mode"      "SF")
   (set_attr "length"    "4")])
+
 
 (define_insn "sqrtsf2"
   [(set (match_operand:SF 0 "register_operand" "=d")
@@ -560,6 +560,18 @@
 
 ;; Adding 2 DI operands in register or reg/imm
 
+(define_insn "adddi3_long"
+  [(set (match_operand:DI 0 "register_operand" "=d,d")
+	(plus:DI (match_operand:DI 1 "reg_or_0_operand" "%dJ,dJ")
+		 (match_operand:DI 2 "arith_plus_operand" "d,K")))]
+  "TARGET_MB_64"
+  "@
+   addlk\t%0,%z1,%2
+   addlik\t%0,%z1,%2"
+  [(set_attr "type"	"arith,arith")
+  (set_attr "mode"	"DI,DI")
+  (set_attr "length"	"4,4")])
+
 (define_insn "adddi3"
   [(set (match_operand:DI 0 "register_operand" "=d,d")
 	(plus:DI (match_operand:DI 1 "register_operand" "%d,d")
@@ -603,6 +615,18 @@
 ;;----------------------------------------------------------------
 ;; Double Precision Subtraction
 ;;----------------------------------------------------------------
+
+(define_insn "subdi3_long"
+  [(set (match_operand:DI 0 "register_operand" "=d,d")
+	(minus:DI (match_operand:DI 1 "register_operand" "d,d")
+		  (match_operand:DI 2 "register_operand" "d,n")))]
+  "TARGET_MB_64"
+  "@
+   rsubl\t%0,%2,%1
+   addlik\t%0,%z1,-%2"
+  [(set_attr "type"	"darith")
+  (set_attr "mode"	"DI,DI")
+  (set_attr "length"	"4,4")])
 
 (define_insn "subdi3"
   [(set (match_operand:DI 0 "register_operand" "=&d")
@@ -793,6 +817,15 @@
   (set_attr "mode"	"SI")
   (set_attr "length"	"4")])
 
+(define_insn "negdi2_long"
+  [(set (match_operand:DI 0 "register_operand" "=d")
+	(neg:DI (match_operand:DI 1 "register_operand" "d")))]
+  "TARGET_MB_64"
+  "rsubl\t%0,%1,r0"
+  [(set_attr "type"	"darith")
+  (set_attr "mode"	"DI")
+  (set_attr "length"	"4")])
+
 (define_insn "negdi2"
   [(set (match_operand:DI 0 "register_operand" "=d")
 	(neg:DI (match_operand:DI 1 "register_operand" "d")))]
@@ -810,6 +843,15 @@
   "xori\t%0,%1,-1"
   [(set_attr "type"	"arith")
   (set_attr "mode"	"SI")
+  (set_attr "length"	"4")])
+
+(define_insn "one_cmpldi2_long"
+  [(set (match_operand:DI 0 "register_operand" "=d")
+	(not:DI (match_operand:DI 1 "register_operand" "d")))]
+  "TARGET_MB_64"
+  "xorli\t%0,%1,-1"
+  [(set_attr "type"	"arith")
+  (set_attr "mode"	"DI")
   (set_attr "length"	"4")])
 
 (define_insn "*one_cmpldi2"
@@ -838,6 +880,20 @@
 ;; Logical
 ;;----------------------------------------------------------------
 
+(define_insn "anddi3"
+  [(set (match_operand:DI 0 "register_operand" "=d,d")
+	(and:DI (match_operand:DI 1 "arith_operand" "d,d")
+		(match_operand:DI 2 "arith_operand" "d,K")))]
+  "TARGET_MB_64"
+  "@
+   andl\t%0,%1,%2
+   andli\t%0,%1,%2 #andl1"
+  ;; andli\t%0,%1,%2 #andl3
+  ;; andli\t%0,%1,%2 #andl2
+  [(set_attr "type"	"arith,arith")
+  (set_attr "mode"	"DI,DI")
+  (set_attr "length"	"4,4")])
+
 (define_insn "andsi3"
   [(set (match_operand:SI 0 "register_operand" "=d,d,d,d")
 	(and:SI (match_operand:SI 1 "arith_operand" "%d,d,d,d")
@@ -853,6 +909,18 @@
   (set_attr "length"	"4,8,8,8")])
 
 
+(define_insn "iordi3"
+  [(set (match_operand:DI 0 "register_operand" "=d,d")
+	(ior:DI (match_operand:DI 1 "arith_operand" "d,d")
+		(match_operand:DI 2 "arith_operand" "d,K")))]
+  "TARGET_MB_64"
+  "@
+   orl\t%0,%1,%2
+   orli\t%0,%1,%2 #andl1"
+  [(set_attr "type"	"arith,arith")
+  (set_attr "mode"	"DI,DI")
+  (set_attr "length"	"4,4")])
+
 (define_insn "iorsi3"
   [(set (match_operand:SI 0 "register_operand" "=d,d,d,d")
 	(ior:SI (match_operand:SI 1 "arith_operand" "%d,d,d,d")
@@ -866,6 +934,19 @@
   [(set_attr "type"	"arith,no_delay_arith,no_delay_arith,no_delay_arith")
   (set_attr "mode"	"SI,SI,SI,SI")
   (set_attr "length"	"4,8,8,8")])
+
+(define_insn "xordi3"
+  [(set (match_operand:DI 0 "register_operand" "=d,d")
+	(xor:DI (match_operand:DI 1 "arith_operand" "%d,d")
+		(match_operand:DI 2 "arith_operand" "d,K")))]
+  "TARGET_MB_64"
+  "@
+   xorl\t%0,%1,%2
+   xorli\t%0,%1,%2 #andl1"
+  [(set_attr "type"	"arith,arith")
+  (set_attr "mode"	"DI,DI")
+  (set_attr "length"	"4,4")])
+
 
 (define_insn "xorsi3"
   [(set (match_operand:SI 0 "register_operand" "=d,d,d")
@@ -935,6 +1016,26 @@
   (set_attr "mode"	"SI")
   (set_attr "length"	"4")])
 
+;;(define_expand "extendqidi2"
+;;  [(set (match_operand:DI 0 "register_operand" "=d")
+;;        (sign_extend:DI (match_operand:QI 1 "general_operand" "d")))]
+;;  "TARGET_MB_64"
+;;  {
+;;	if (GET_CODE (operands[1]) != REG)
+;;	FAIL;
+;;   }
+;;)
+    
+
+;;(define_insn "extendqidi2"
+;;  [(set (match_operand:DI 0 "register_operand" "=d")
+;;	(sign_extend:DI (match_operand:QI 1 "register_operand" "d")))]
+;;  "TARGET_MB_64"
+;;  "sextl8\t%0,%1"
+;;  [(set_attr "type"	"arith")
+;;  (set_attr "mode"	"DI")
+;;  (set_attr "length"	"4")])
+
 (define_insn "extendhisi2"
   [(set (match_operand:SI 0 "register_operand" "=d")
 	(sign_extend:SI (match_operand:HI 1 "register_operand" "d")))]
@@ -943,6 +1044,16 @@
   [(set_attr "type"	"arith")
   (set_attr "mode"	"SI")
   (set_attr "length"	"4")])
+
+(define_insn "extendhidi2"
+  [(set (match_operand:DI 0 "register_operand" "=d")
+	(sign_extend:DI (match_operand:HI 1 "register_operand" "d")))]
+  "TARGET_MB_64"
+  "sextl16\t%0,%1"
+  [(set_attr "type"	"arith")
+  (set_attr "mode"	"DI")
+  (set_attr "length"	"4")])
+
 
 ;; Those for integer source operand are ordered
 ;; widest source type first.
@@ -1007,7 +1118,6 @@
     }
   }
 )
-
 
 
 (define_insn "*movdi_internal"
@@ -1421,6 +1531,36 @@
   (set_attr "length"	"4,4")]
 )
 
+;; Barrel shift left
+(define_expand "ashldi3"
+  [(set (match_operand:DI 0 "register_operand" "=&d")
+	(ashift:DI (match_operand:DI 1 "register_operand" "d")
+                   (match_operand:DI 2 "arith_operand"    "")))]
+"TARGET_MB_64"
+{
+;;if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) > 0 && INTVAL (operands[2]) < 65)
+if (INTVAL (operands[2]) > 0 && INTVAL (operands[2]) < 65)
+  {
+    emit_insn(gen_ashldi3_long (operands[0], operands[1],operands[2]));
+    DONE;
+  }
+else
+  FAIL;
+}    
+)
+
+(define_insn "ashldi3_long"
+  [(set (match_operand:DI 0 "register_operand" "=d,d")
+	(ashift:DI (match_operand:DI 1 "register_operand" "d,d")
+                   (match_operand:DI 2 "arith_operand"    "I,d")))]
+  "TARGET_MB_64"
+  "@
+  bsllli\t%0,%1,%2
+  bslll\t%0,%1,%2"
+  [(set_attr "type"	"bshift,bshift")
+  (set_attr "mode"	"DI,DI")
+  (set_attr "length"	"4,4")]
+)
 ;; The following patterns apply when there is no barrel shifter present
 
 (define_insn "*ashlsi3_with_mul_delay"
@@ -1546,6 +1686,36 @@
 ;;----------------------------------------------------------------
 ;; 32-bit right shifts
 ;;----------------------------------------------------------------
+;; Barrel shift left
+(define_expand "ashrdi3"
+  [(set (match_operand:DI 0 "register_operand" "=&d")
+	(ashiftrt:DI (match_operand:DI 1 "register_operand" "d")
+                   (match_operand:DI 2 "arith_operand"    "")))]
+"TARGET_MB_64"
+{
+;;if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) > 0 && INTVAL (operands[2]) < 65)
+if (INTVAL (operands[2]) > 0 && INTVAL (operands[2]) < 65)
+  {
+    emit_insn(gen_ashrdi3_long (operands[0], operands[1],operands[2]));
+    DONE;
+  }
+else
+  FAIL;
+}    
+)
+
+(define_insn "ashrdi3_long"
+  [(set (match_operand:DI 0 "register_operand" "=d,d")
+	(ashiftrt:DI (match_operand:DI 1 "register_operand" "d,d")
+                   (match_operand:DI 2 "arith_operand"    "I,d")))]
+  "TARGET_MB_64"
+  "@
+   bslrai\t%0,%1,%2
+   bslra\t%0,%1,%2"
+  [(set_attr "type"	"bshift,bshift")
+  (set_attr "mode"	"DI,DI")
+  (set_attr "length"	"4,4")]
+  )
 (define_expand "ashrsi3"
   [(set (match_operand:SI 0 "register_operand" "=&d")
 	(ashiftrt:SI (match_operand:SI 1 "register_operand" "d")
@@ -1655,6 +1825,36 @@
 ;;----------------------------------------------------------------
 ;; 32-bit right shifts (logical)
 ;;----------------------------------------------------------------
+;; Barrel shift left
+(define_expand "lshrdi3"
+  [(set (match_operand:DI 0 "register_operand" "=&d")
+	(lshiftrt:DI (match_operand:DI 1 "register_operand" "d")
+                   (match_operand:DI 2 "arith_operand"    "")))]
+"TARGET_MB_64"
+{
+;;if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) > 0 && INTVAL (operands[2]) < 65)
+if (INTVAL (operands[2]) > 0 && INTVAL (operands[2]) < 65)
+  {
+    emit_insn(gen_lshrdi3_long (operands[0], operands[1],operands[2]));
+    DONE;
+  }
+else
+  FAIL;
+}    
+)
+
+(define_insn "lshrdi3_long"
+  [(set (match_operand:DI 0 "register_operand" "=d,d")
+	(lshiftrt:DI (match_operand:DI 1 "register_operand" "d,d")
+                   (match_operand:DI 2 "arith_operand"    "I,d")))]
+  "TARGET_MB_64"
+  "@
+   bslrli\t%0,%1,%2
+   bslrl\t%0,%1,%2"
+  [(set_attr "type"	"bshift,bshift")
+  (set_attr "mode"	"DI,DI")
+  (set_attr "length"	"4,4")]
+  )
 
 (define_expand "lshrsi3"
   [(set (match_operand:SI 0 "register_operand" "=&d")
@@ -1801,6 +2001,8 @@
   (set_attr "length"	"4")]
 )              
 
+
+
 ;;----------------------------------------------------------------
 ;; Setting a register from an floating point comparison. 
 ;;----------------------------------------------------------------
@@ -1813,6 +2015,18 @@
   "fcmp.%C1\t%0,%3,%2"
   [(set_attr "type"     "fcmp")
    (set_attr "mode"      "SF")
+   (set_attr "length"    "4")]
+)
+
+(define_insn "cstoredf4"
+   [(set (match_operand:DI 0 "register_operand" "=r")
+        (match_operator:DI 1 "ordered_comparison_operator"
+	      [(match_operand:DF 2 "register_operand" "r")
+	       (match_operand:DF 3 "register_operand" "r")]))]
+  "TARGET_MB_64"
+  "dcmp.%C1\t%0,%3,%2"
+  [(set_attr "type"     "fcmp")
+   (set_attr "mode"      "DF")
    (set_attr "length"    "4")]
 )
 
@@ -1922,6 +2136,115 @@
 
     operands[0] = gen_rtx_fmt_ee (signed_condition (code), SImode, operands[4], const0_rtx);
     return "b%C0i%?\tr18,%3";
+  }
+  [(set_attr "type"     "branch")
+   (set_attr "mode"     "none")
+   (set_attr "length"   "12")]
+)
+
+
+(define_expand "cbranchdi4"
+  [(set (pc)
+        (if_then_else (match_operator 0 "ordered_comparison_operator"
+                       [(match_operand:DI 1 "register_operand")
+                        (match_operand:DI 2 "arith_operand" "I,i")])
+                      (label_ref (match_operand 3 ""))
+                      (pc)))]
+  "TARGET_MB_64"
+{
+  microblaze_expand_conditional_branch (DImode, operands);
+  DONE;
+})
+
+(define_expand "cbranchdi4_reg"
+  [(set (pc)
+        (if_then_else (match_operator 0 "ordered_comparison_operator"
+                       [(match_operand:DI 1 "register_operand")
+                        (match_operand:DI 2 "register_operand")])
+                      (label_ref (match_operand 3 ""))
+                      (pc)))]
+  "TARGET_MB_64"
+{
+  microblaze_expand_conditional_branch_reg (DImode, operands);
+  DONE;
+})
+
+(define_expand "cbranchdf4"
+  [(set (pc)
+	(if_then_else (match_operator 0 "ordered_comparison_operator"
+		       [(match_operand:DF 1 "register_operand")
+		        (match_operand:DF 2 "register_operand")])
+		      (label_ref (match_operand 3 ""))
+		      (pc)))]
+  "TARGET_MB_64"
+{
+  microblaze_expand_conditional_branch_df (operands);
+  DONE;
+
+})
+
+;; Used to implement comparison instructions
+(define_expand "long_condjump"
+  [(set (pc)
+	(if_then_else (match_operand 0)
+		      (label_ref (match_operand 1))
+		      (pc)))])
+
+(define_insn "long_branch_zero"
+  [(set (pc)
+	(if_then_else (match_operator:DI 0 "ordered_comparison_operator"
+  				 [(match_operand:DI 1 "register_operand" "d")
+                                  (const_int 0)])
+                      (match_operand:DI 2 "pc_or_label_operand" "")
+                      (match_operand:DI 3 "pc_or_label_operand" "")))
+  ]
+  "TARGET_MB_64"
+  {
+    if (operands[3] == pc_rtx) 
+      return "beal%C0i%?\t%z1,%2";
+    else 
+      return "beal%N0i%?\t%z1,%3";
+  }
+  [(set_attr "type"	"branch")
+   (set_attr "mode"	"none")
+   (set_attr "length"	"4")]
+)
+
+(define_insn "long_branch_compare"
+  [(set (pc)
+        (if_then_else (match_operator:DI 0 "cmp_op"
+                                         [(match_operand:DI 1 "register_operand" "d")
+                                          (match_operand:DI 2 "register_operand" "d")
+                                         ])
+                      (label_ref (match_operand 3))
+                      (pc)))
+  (clobber(reg:DI R_TMP))]
+  "TARGET_MB_64"
+  {
+    operands[4] = gen_rtx_REG (DImode, MB_ABI_ASM_TEMP_REGNUM);
+    enum rtx_code code = GET_CODE (operands[0]);
+
+    if (code == GT || code == LE)
+      {
+        output_asm_insn ("cmpl\tr18,%z1,%z2", operands);
+        code = swap_condition (code);
+      }
+    else if (code == GTU || code == LEU)
+      {
+        output_asm_insn ("cmplu\tr18,%z1,%z2", operands);
+        code = swap_condition (code);
+      }
+    else if (code == GE || code == LT)
+      {
+        output_asm_insn ("cmpl\tr18,%z2,%z1", operands);
+      }
+    else if (code == GEU || code == LTU)
+      {
+        output_asm_insn ("cmplu\tr18,%z2,%z1", operands);
+      }
+
+    operands[0] = gen_rtx_fmt_ee (signed_condition (code), DImode, operands[4], const0_rtx);
+    return "beal%C0i%?\tr18,%3";
   }
   [(set_attr "type"     "branch")
    (set_attr "mode"     "none")
@@ -2462,17 +2785,33 @@
   DONE;
 }")
 
-(define_expand "extzvsi"
+(define_expand "extvsi"
   [(set (match_operand:SI 0 "register_operand" "r")
 	(zero_extract:SI (match_operand:SI 1 "register_operand" "r")
 			 (match_operand:SI 2 "immediate_operand" "I")
 			 (match_operand:SI 3 "immediate_operand" "I")))]
 "TARGET_HAS_BITFIELD"
-""
-)
+"
+{
+  unsigned HOST_WIDE_INT len = UINTVAL (operands[2]);
+  unsigned HOST_WIDE_INT pos = UINTVAL (operands[3]);
 
+  if ((len == 0) || (pos + len > 32) )
+    FAIL;
 
-(define_insn "extzv_32"
+  ;;if (!register_operand (operands[1], VOIDmode))
+  ;;  FAIL;
+  if (operands[0] == operands[1])
+  FAIL;
+  if (GET_CODE (operands[1]) == ASHIFT)
+  FAIL;
+;;  operands[2] = GEN_INT(INTVAL(operands[2])+1 );
+ emit_insn (gen_extv_32 (operands[0], operands[1],
+			  operands[2], operands[3]));
+  DONE;
+}")
+
+(define_insn "extv_32"
   [(set (match_operand:SI 0 "register_operand" "=r")
 	(zero_extract:SI (match_operand:SI 1 "register_operand" "r")
 			 (match_operand:SI 2 "immediate_operand" "I")
@@ -2489,8 +2828,21 @@
 			 (match_operand:SI 2 "immediate_operand" "I"))
 	(match_operand:SI 3 "register_operand" "r"))]
  "TARGET_HAS_BITFIELD"
-""
-)
+  "
+{
+  unsigned HOST_WIDE_INT len = UINTVAL (operands[1]);
+  unsigned HOST_WIDE_INT pos = UINTVAL (operands[2]);
+
+  if (len <= 0 || pos + len > 32)
+    FAIL;
+
+  ;;if (!register_operand (operands[0], VOIDmode))
+  ;;  FAIL;
+
+  emit_insn (gen_insv_32 (operands[0], operands[1],
+			  operands[2], operands[3]));
+  DONE;
+}")
 
 (define_insn "insv_32"
   [(set (zero_extract:SI (match_operand:SI 0 "register_operand" "+r")

@@ -102,6 +102,7 @@ extern enum pipeline_type microblaze_pipe;
 #define ASM_SPEC "\
 %(target_asm_spec) \
 %{mbig-endian:-EB} \
+%{m64:-m64} \
 %{mlittle-endian:-EL}"
 
 /* Extra switches sometimes passed to the linker.  */
@@ -110,6 +111,7 @@ extern enum pipeline_type microblaze_pipe;
 #define LINK_SPEC "%{shared:-shared} -N -relax \
   %{mbig-endian:-EB --oformat=elf32-microblaze} \
   %{mlittle-endian:-EL --oformat=elf32-microblazeel} \
+  %{m64:-EL --oformat=elf64-microblazeel} \
   %{Zxl-mode-xmdstub:-defsym _TEXT_START_ADDR=0x800} \
   %{mxl-mode-xmdstub:-defsym _TEXT_START_ADDR=0x800} \
   %{mxl-gp-opt:%{G*}} %{!mxl-gp-opt: -G 0} \
@@ -217,7 +219,7 @@ extern enum pipeline_type microblaze_pipe;
 #define MIN_UNITS_PER_WORD      4
 #define INT_TYPE_SIZE           32
 #define SHORT_TYPE_SIZE         16
-#define LONG_TYPE_SIZE          32
+#define LONG_TYPE_SIZE          64
 #define LONG_LONG_TYPE_SIZE     64
 #define FLOAT_TYPE_SIZE         32
 #define DOUBLE_TYPE_SIZE        64
