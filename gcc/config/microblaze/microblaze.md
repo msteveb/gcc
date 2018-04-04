@@ -1120,6 +1120,32 @@
 )
 
 
+(define_insn "*movdi_internal_64"
+  [(set (match_operand:DI 0 "nonimmediate_operand" "=d,d,d,d,d,R,o")
+	(match_operand:DI 1 "general_operand"      " d,K,J,R,o,d,d"))]
+  "TARGET_MB_64 && (INTVAL(operands[1]) < 0x7fffffffff) && (INTVAL(operands[1]) > 0xffffff8000000000)"
+  { 
+    switch (which_alternative)
+    {
+      case 0:
+        return "addlk\t%0,%1";
+      case 1:
+	return "addlik\t%0,r0,%1";
+      case 2:
+	  return "addlk\t%0,r0,r0";
+      case 3:
+      case 4:
+	  return "lli\t%0,%1";
+      case 5:
+      case 6:
+        return "sli\t%1,%0";
+    }
+    return "unreachable";
+  }
+  [(set_attr "type"	"no_delay_move,no_delay_arith,no_delay_arith,no_delay_load,no_delay_load,no_delay_store,no_delay_store")
+  (set_attr "mode"	"DI")
+  (set_attr "length"   "8,8,8,8,12,8,12")])
+
 (define_insn "*movdi_internal"
   [(set (match_operand:DI 0 "nonimmediate_operand" "=d,d,d,d,d,R,o")
 	(match_operand:DI 1 "general_operand"      " d,i,J,R,o,d,d"))]

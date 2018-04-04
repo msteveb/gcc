@@ -52,6 +52,11 @@
   (and (match_code "const_int")
        (match_test "ival > 0 && ival < 0x10000")))
 
+(define_constraint "K"
+  "A constant in the range 0xffffff8000000000L  to 0x0000007fffffffffL (inclusive)."
+  (and (match_code "const_int")
+       (match_test "ival > (long)0xffffff8000000000L && ival < (long)0x0000007fffffffffL")))
+
 ;; Define floating point constraints
 
 (define_constraint "G"

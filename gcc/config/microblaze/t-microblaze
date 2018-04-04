@@ -4,8 +4,8 @@ MULTILIB_EXCEPTIONS = *mxl-barrel-shift/mxl-multiply-high mxl-multiply-high
 MULTILIB_EXCEPTIONS += *mxl-barrel-shift/mxl-multiply-high/mlittle-endian
 MULTILIB_EXCEPTIONS += *mxl-barrel-shift/mxl-multiply-high/m64
 MULTILIB_EXCEPTIONS += mxl-multiply-high/mlittle-endian
-MULTILIB_EXCEPTIONS += mxl-multiply-high/m64
-MULTILIB_EXCEPTIONS += *mxl-multiply-high/mlittle-endian/m64
+#MULTILIB_EXCEPTIONS += mxl-multiply-high/m64
+#MULTILIB_EXCEPTIONS += *mxl-multiply-high/mlittle-endian/m64
 
 # Extra files
 microblaze-c.o: $(srcdir)/config/microblaze/microblaze-c.c \
