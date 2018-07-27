@@ -382,10 +382,10 @@ simple_memory_operand (rtx op, machine_mode mode ATTRIBUTE_UNUSED)
 	{
 	  return 1;
 	}
-      else if (GET_CODE (plus0) == REG && GET_CODE (plus1) == REG)
+      /*else if (GET_CODE (plus0) == REG && GET_CODE (plus1) == REG)
 	{
 	  return 1;
-	}
+	}*/
       else
 	return 0;
 
@@ -433,7 +433,7 @@ double_memory_operand (rtx op, machine_mode mode)
     return 1;
 
   return memory_address_p ((GET_MODE_CLASS (mode) == MODE_INT
-			    ? E_SImode : E_SFmode),
+			    ? Pmode : E_SFmode),
 			   plus_constant (Pmode, addr, 4));
 }
 
@@ -680,7 +680,7 @@ microblaze_legitimize_tls_address(rtx x, rtx reg)
          /* Load the addend.  */
          addend = gen_rtx_UNSPEC (Pmode, gen_rtvec (2, x, GEN_INT (TLS_DTPREL)),
 				  UNSPEC_TLS);
-         addend = force_reg (SImode, gen_rtx_CONST (SImode, addend));
+         addend = force_reg (Pmode, gen_rtx_CONST (Pmode, addend));
          dest = gen_rtx_PLUS (Pmode, dest, addend);
          break;
 
@@ -698,7 +698,7 @@ microblaze_classify_unspec (struct microblaze_address_info *info, rtx x)
 
   if (XINT (x, 1) == UNSPEC_GOTOFF)
     {
-      info->regA = gen_rtx_REG (SImode, PIC_OFFSET_TABLE_REGNUM);
+      info->regA = gen_rtx_REG (Pmode, PIC_OFFSET_TABLE_REGNUM);
       info->type = ADDRESS_GOTOFF;
     }
   else if (XINT (x, 1) == UNSPEC_PLT)
@@ -1230,8 +1230,16 @@ microblaze_block_move_loop (rtx dest, rtx src, HOST_WIDE_INT length)
   emit_move_insn (dest_reg, plus_constant (Pmode, dest_reg, MAX_MOVE_BYTES));
 
   /* Emit the test & branch.  */
-  emit_insn (gen_cbranchsi4 (gen_rtx_NE (SImode, src_reg, final_src),
+
+  if (TARGET_MB_64) {
+    emit_insn (gen_cbranchdi4 (gen_rtx_NE (Pmode, src_reg, final_src),
 			     src_reg, final_src, label));
+    }
+  else {
+    emit_insn (gen_cbranchsi4 (gen_rtx_NE (Pmode, src_reg, final_src),
+			     src_reg, final_src, label));
+  
+    }
 
   /* Mop up any left-over bytes.  */
   if (leftover)
@@ -1561,14 +1569,20 @@ microblaze_function_arg_advance (cumulative_args_t cum_v,
       break;
 
     case E_DFmode:
-      cum->arg_words += 2;
+      if (TARGET_MB_64)
+       cum->arg_words++;
+      else
+       cum->arg_words += 2;
       if (!cum->gp_reg_found && cum->arg_number <= 2)
 	cum->fp_code += 2 << ((cum->arg_number - 1) * 2);
       break;
 
     case E_DImode:
       cum->gp_reg_found = 1;
-      cum->arg_words += 2;
+      if (TARGET_MB_64)
+       cum->arg_words++;
+      else
+       cum->arg_words += 2;
       break;
 
     case E_QImode:
@@ -2219,7 +2233,7 @@ compute_frame_size (HOST_WIDE_INT size)
 
 	  if (regno != MB_ABI_SUB_RETURN_ADDR_REGNUM)
 	    /* Don't account for link register. It is accounted specially below.  */
-	    gp_reg_size += GET_MODE_SIZE (SImode);
+	    gp_reg_size += GET_MODE_SIZE (Pmode);
 
 	  mask |= (1L << (regno - GP_REG_FIRST));
 	}
@@ -2487,7 +2501,7 @@ print_operand (FILE * file, rtx op, int letter)
 
       if ((letter == 'M' && !WORDS_BIG_ENDIAN)
 	  || (letter == 'L' && WORDS_BIG_ENDIAN) || letter == 'D')
-	regnum++;
+	regnum++; 
 
       fprintf (file, "%s", reg_names[regnum]);
     }
@@ -2513,6 +2527,7 @@ print_operand (FILE * file, rtx op, int letter)
   else if (letter == 'h' || letter == 'j')
     {
       long val[2];
+      int val1[2];
       long l[2];
       if (code == CONST_DOUBLE)
 	{
@@ -2525,12 +2540,12 @@ print_operand (FILE * file, rtx op, int letter)
               val[0] = l[WORDS_BIG_ENDIAN != 0];
 	    }
 	}
-      else if (code == CONST_INT)
+      else if (code == CONST_INT || code == CONST)// || code == SYMBOL_REF ||code == LABEL_REF)
         {
-	  val[0] = (INTVAL (op) & 0xffffffff00000000LL) >> 32;
-	  val[1] = INTVAL (op) & 0x00000000ffffffffLL;
+	  val1[0] = (INTVAL (op) & 0xffffffff00000000LL) >> 32;
+	  val1[1] = INTVAL (op) & 0x00000000ffffffffLL;
         }
-      fprintf (file, "0x%8.8lx", (letter == 'h') ? val[0] : val[1]);
+      fprintf (file, "0x%8.8lx", (letter == 'h') ? val1[0] : val1[1]);
     }
   else if (code == CONST_DOUBLE)
     {
@@ -2713,7 +2728,10 @@ microblaze_asm_constructor (rtx symbol ATTRIBUTE_UNUSED, int priority)
 
     switch_to_section (get_section (section, 0, NULL));
     assemble_align (POINTER_SIZE);
-    fputs ("\t.word\t", asm_out_file);
+    if (TARGET_MB_64)
+      fputs ("\t.dword\t", asm_out_file);
+    else
+      fputs ("\t.word\t", asm_out_file);
     output_addr_const (asm_out_file, symbol);
     fputs ("\n", asm_out_file);
 }
@@ -2736,7 +2754,10 @@ microblaze_asm_destructor (rtx symbol, int priority)
 
     switch_to_section (get_section (section, 0, NULL));
     assemble_align (POINTER_SIZE);
-    fputs ("\t.word\t", asm_out_file);
+    if (TARGET_MB_64)
+      fputs ("\t.dword\t", asm_out_file);
+    else
+     fputs ("\t.word\t", asm_out_file);
     output_addr_const (asm_out_file, symbol);
     fputs ("\n", asm_out_file);
 }
@@ -2802,7 +2823,7 @@ save_restore_insns (int prologue)
   /* For interrupt_handlers, need to save/restore the MSR.  */
   if (microblaze_is_interrupt_variant ())
     {
-      isr_mem_rtx = gen_rtx_MEM (SImode,
+      isr_mem_rtx = gen_rtx_MEM (Pmode,
 				 gen_rtx_PLUS (Pmode, base_reg_rtx,
 					       GEN_INT (current_frame_info.
 							gp_offset -
@@ -2810,8 +2831,8 @@ save_restore_insns (int prologue)
 
       /* Do not optimize in flow analysis.  */
       MEM_VOLATILE_P (isr_mem_rtx) = 1;
-      isr_reg_rtx = gen_rtx_REG (SImode, MB_ABI_MSR_SAVE_REG);
-      isr_msr_rtx = gen_rtx_REG (SImode, ST_REG);
+      isr_reg_rtx = gen_rtx_REG (Pmode, MB_ABI_MSR_SAVE_REG);
+      isr_msr_rtx = gen_rtx_REG (Pmode, ST_REG);
     }
 
   if (microblaze_is_interrupt_variant () && !prologue)
@@ -2819,8 +2840,8 @@ save_restore_insns (int prologue)
       emit_move_insn (isr_reg_rtx, isr_mem_rtx);
       emit_move_insn (isr_msr_rtx, isr_reg_rtx);
       /* Do not optimize in flow analysis.  */
-      emit_insn (gen_rtx_USE (SImode, isr_reg_rtx));
-      emit_insn (gen_rtx_USE (SImode, isr_msr_rtx));
+      emit_insn (gen_rtx_USE (Pmode, isr_reg_rtx));
+      emit_insn (gen_rtx_USE (Pmode, isr_msr_rtx));
     }
 
   for (regno = GP_REG_FIRST; regno <= GP_REG_LAST; regno++)
@@ -2831,9 +2852,9 @@ save_restore_insns (int prologue)
 	    /* Don't handle here. Already handled as the first register.  */
 	    continue;
 
-	  reg_rtx = gen_rtx_REG (SImode, regno);
+	  reg_rtx = gen_rtx_REG (Pmode, regno);
 	  insn = gen_rtx_PLUS (Pmode, base_reg_rtx, GEN_INT (gp_offset));
-	  mem_rtx = gen_rtx_MEM (SImode, insn);
+	  mem_rtx = gen_rtx_MEM (Pmode, insn);
 	  if (microblaze_is_interrupt_variant () || save_volatiles)
 	    /* Do not optimize in flow analysis.  */
 	    MEM_VOLATILE_P (mem_rtx) = 1;
@@ -2848,7 +2869,7 @@ save_restore_insns (int prologue)
 	      insn = emit_move_insn (reg_rtx, mem_rtx);
 	    }
 
-	  gp_offset += GET_MODE_SIZE (SImode);
+	  gp_offset += GET_MODE_SIZE (Pmode);
 	}
     }
 
@@ -2858,8 +2879,8 @@ save_restore_insns (int prologue)
       emit_move_insn (isr_mem_rtx, isr_reg_rtx);
 
       /* Do not optimize in flow analysis.  */
-      emit_insn (gen_rtx_USE (SImode, isr_reg_rtx));
-      emit_insn (gen_rtx_USE (SImode, isr_msr_rtx));
+      emit_insn (gen_rtx_USE (Pmode, isr_reg_rtx));
+      emit_insn (gen_rtx_USE (Pmode, isr_msr_rtx));
     }
 
   /* Done saving and restoring */
@@ -2949,7 +2970,10 @@ microblaze_elf_asm_cdtor (rtx symbol, int priority, bool is_ctor)
 
   switch_to_section (s);
   assemble_align (POINTER_SIZE);
-  fputs ("\t.word\t", asm_out_file);
+  if (TARGET_MB_64)
+    fputs ("\t.dword\t", asm_out_file);
+  else
+    fputs ("\t.word\t", asm_out_file);
   output_addr_const (asm_out_file, symbol);
   fputs ("\n", asm_out_file);
 }
@@ -3095,10 +3119,10 @@ microblaze_expand_prologue (void)
 	{
 	  if (offset != 0)
 	    ptr = gen_rtx_PLUS (Pmode, stack_pointer_rtx, GEN_INT (offset));
-	  emit_move_insn (gen_rtx_MEM (SImode, ptr),
-			  gen_rtx_REG (SImode, regno));
+	  emit_move_insn (gen_rtx_MEM (Pmode, ptr),
+			  gen_rtx_REG (Pmode, regno));
 
-	  offset += GET_MODE_SIZE (SImode);
+	  offset += GET_MODE_SIZE (Pmode);
 	}
 
     }
@@ -3108,15 +3132,23 @@ microblaze_expand_prologue (void)
       rtx fsiz_rtx = GEN_INT (fsiz);
 
       rtx_insn *insn = NULL;
-      insn = emit_insn (gen_subsi3 (stack_pointer_rtx, stack_pointer_rtx,
+         if (TARGET_MB_64)
+           {
+              
+             insn = emit_insn (gen_subdi3 (stack_pointer_rtx, stack_pointer_rtx,
 				    fsiz_rtx));
+           }
+         else { 
+             insn = emit_insn (gen_subsi3 (stack_pointer_rtx, stack_pointer_rtx,
+				    fsiz_rtx));
+           }
       if (insn)
 	RTX_FRAME_RELATED_P (insn) = 1;
 
       /* Handle SUB_RETURN_ADDR_REGNUM specially at first.  */
       if (!crtl->is_leaf || interrupt_handler)
 	{
-	  mem_rtx = gen_rtx_MEM (SImode,
+	  mem_rtx = gen_rtx_MEM (Pmode,
 				 gen_rtx_PLUS (Pmode, stack_pointer_rtx,
 					       const0_rtx));
 
@@ -3124,7 +3156,7 @@ microblaze_expand_prologue (void)
 	    /* Do not optimize in flow analysis.  */
 	    MEM_VOLATILE_P (mem_rtx) = 1;
 
-	  reg_rtx = gen_rtx_REG (SImode, MB_ABI_SUB_RETURN_ADDR_REGNUM);
+	  reg_rtx = gen_rtx_REG (Pmode, MB_ABI_SUB_RETURN_ADDR_REGNUM);
 	  insn = emit_move_insn (mem_rtx, reg_rtx);
 	  RTX_FRAME_RELATED_P (insn) = 1;
 	}
@@ -3224,12 +3256,12 @@ microblaze_expand_epilogue (void)
       if (!crtl->is_leaf || interrupt_handler)
 	{
 	  mem_rtx =
-	    gen_rtx_MEM (SImode,
+	    gen_rtx_MEM (Pmode,
 			 gen_rtx_PLUS (Pmode, stack_pointer_rtx, const0_rtx));
 	  if (interrupt_handler)
 	    /* Do not optimize in flow analysis.  */
 	    MEM_VOLATILE_P (mem_rtx) = 1;
-	  reg_rtx = gen_rtx_REG (SImode, MB_ABI_SUB_RETURN_ADDR_REGNUM);
+	  reg_rtx = gen_rtx_REG (Pmode, MB_ABI_SUB_RETURN_ADDR_REGNUM);
 	  emit_move_insn (reg_rtx, mem_rtx);
 	}
 
@@ -3245,15 +3277,25 @@ microblaze_expand_epilogue (void)
       /* _restore_ registers for epilogue.  */
       save_restore_insns (0);
       emit_insn (gen_blockage ());
-      emit_insn (gen_addsi3 (stack_pointer_rtx, stack_pointer_rtx, fsiz_rtx));
+      if (TARGET_MB_64)
+        emit_insn (gen_adddi3 (stack_pointer_rtx, stack_pointer_rtx, fsiz_rtx));
+      else
+        emit_insn (gen_addsi3 (stack_pointer_rtx, stack_pointer_rtx, fsiz_rtx));
     }
 
   if (crtl->calls_eh_return)
-    emit_insn (gen_addsi3 (stack_pointer_rtx,
+      if (TARGET_MB_64) {
+          emit_insn (gen_adddi3 (stack_pointer_rtx,
                            stack_pointer_rtx,
-                           gen_raw_REG (SImode,
+                           gen_raw_REG (Pmode,
 					MB_EH_STACKADJ_REGNUM)));
-
+        }
+      else {
+          emit_insn (gen_addsi3 (stack_pointer_rtx,
+                           stack_pointer_rtx,
+                           gen_raw_REG (Pmode,
+					MB_EH_STACKADJ_REGNUM)));
+        }
   emit_jump_insn (gen_return_internal (gen_rtx_REG (Pmode, GP_REG_FIRST +
 						    MB_ABI_SUB_RETURN_ADDR_REGNUM)));
 }
@@ -3402,9 +3444,14 @@ microblaze_asm_output_mi_thunk (FILE *file, tree thunk_fndecl ATTRIBUTE_UNUSED,
   else
     this_rtx = gen_rtx_REG (Pmode, MB_ABI_FIRST_ARG_REGNUM);
 
-  /* Apply the constant offset, if required.  */
+  /* Apply the constant offset, if required. */ 
   if (delta)
-    emit_insn (gen_addsi3 (this_rtx, this_rtx, GEN_INT (delta)));
+    {
+      if (TARGET_MB_64)
+        emit_insn (gen_adddi3 (this_rtx, this_rtx, GEN_INT (delta))); 
+      else
+        emit_insn (gen_addsi3 (this_rtx, this_rtx, GEN_INT (delta)));
+    } 
 
   /* Apply the offset from the vtable, if required.  */
   if (vcall_offset)
@@ -3417,7 +3464,10 @@ microblaze_asm_output_mi_thunk (FILE *file, tree thunk_fndecl ATTRIBUTE_UNUSED,
     rtx loc = gen_rtx_PLUS (Pmode, temp1, vcall_offset_rtx);
     emit_move_insn (temp1, gen_rtx_MEM (Pmode, loc));
 
-    emit_insn (gen_addsi3 (this_rtx, this_rtx, temp1));
+    if (TARGET_MB_64)
+      emit_insn (gen_adddi3 (this_rtx, this_rtx, temp1));
+    else
+      emit_insn (gen_addsi3 (this_rtx, this_rtx, temp1));
   }
 
   /* Generate a tail call to the target function.  */
@@ -3564,7 +3614,7 @@ microblaze_eh_return (rtx op0)
 /* Queue an .ident string in the queue of top-level asm statements.
    If the string size is below the threshold, put it into .sdata2.
    If the front-end is done, we must be being called from toplev.c.
-   In that case, do nothing.  */
+   In that case, do nothing. */ 
 void 
 microblaze_asm_output_ident (const char *string)
 {
@@ -3619,9 +3669,9 @@ microblaze_trampoline_init (rtx m_tramp, tree fndecl, rtx chain_value)
   emit_block_move (m_tramp, assemble_trampoline_template (),
 		   GEN_INT (6*UNITS_PER_WORD), BLOCK_OP_NORMAL);
 
-  mem = adjust_address (m_tramp, SImode, 16);
+  mem = adjust_address (m_tramp, Pmode, 16);
   emit_move_insn (mem, chain_value);
-  mem = adjust_address (m_tramp, SImode, 20);
+  mem = adjust_address (m_tramp, Pmode, 20);
   emit_move_insn (mem, fnaddr);
 }
 
@@ -3645,7 +3695,7 @@ microblaze_expand_conditional_branch (machine_mode mode, rtx operands[])
     {
       comp_reg = cmp_op0;
       condition = gen_rtx_fmt_ee (signed_condition (code), mode, comp_reg, const0_rtx);
-      if (mode == SImode)
+      if (mode == Pmode)
         emit_jump_insn (gen_condjump (condition, label1));
       else
         emit_jump_insn (gen_long_condjump (condition, label1));
@@ -3764,7 +3814,7 @@ microblaze_expand_conditional_branch_sf (rtx operands[])
   rtx comp_reg = gen_reg_rtx (SImode);
 
   emit_insn (gen_cstoresf4 (comp_reg, operands[0], cmp_op0, cmp_op1));
-  condition = gen_rtx_NE (SImode, comp_reg, const0_rtx);
+  condition = gen_rtx_NE (Pmode, comp_reg, const0_rtx);
   emit_jump_insn (gen_condjump (condition, operands[3]));
 }
 
@@ -3774,10 +3824,10 @@ microblaze_expand_conditional_branch_df (rtx operands[])
   rtx condition;
   rtx cmp_op0 = XEXP (operands[0], 0);
   rtx cmp_op1 = XEXP (operands[0], 1);
-  rtx comp_reg = gen_reg_rtx (DImode);
+  rtx comp_reg = gen_reg_rtx (Pmode);
 
   emit_insn (gen_cstoredf4 (comp_reg, operands[0], cmp_op0, cmp_op1));
-  condition = gen_rtx_NE (DImode, comp_reg, const0_rtx);
+  condition = gen_rtx_NE (Pmode, comp_reg, const0_rtx);
   emit_jump_insn (gen_long_condjump (condition, operands[3]));
 }
 
@@ -3798,8 +3848,8 @@ microblaze_expand_divide (rtx operands[])
 {
   /* Table lookup software divides. Works for all (nr/dr) where (0 <= nr,dr <= 15).  */
 
-  rtx regt1 = gen_reg_rtx (SImode); 
-  rtx reg18 = gen_rtx_REG (SImode, R_TMP);
+  rtx regt1 = gen_reg_rtx (Pmode); 
+  rtx reg18 = gen_rtx_REG (Pmode, R_TMP);
   rtx regqi = gen_reg_rtx (QImode);
   rtx_code_label *div_label = gen_label_rtx ();
   rtx_code_label *div_end_label = gen_label_rtx ();
@@ -3807,17 +3857,31 @@ microblaze_expand_divide (rtx operands[])
   rtx mem_rtx;
   rtx ret;
   rtx_insn *jump, *cjump, *insn;
-
-  insn = emit_insn (gen_iorsi3 (regt1, operands[1], operands[2]));
-  cjump = emit_jump_insn_after (gen_cbranchsi4 (
-					gen_rtx_GTU (SImode, regt1, GEN_INT (15)), 
+ 
+  if (TARGET_MB_64) {
+      insn = emit_insn (gen_iordi3 (regt1, operands[1], operands[2]));
+      cjump = emit_jump_insn_after (gen_cbranchdi4 (
+					gen_rtx_GTU (Pmode, regt1, GEN_INT (15)), 
 					regt1, GEN_INT (15), div_label), insn);
+    }
+  else {
+      insn = emit_insn (gen_iorsi3 (regt1, operands[1], operands[2]));
+      cjump = emit_jump_insn_after (gen_cbranchsi4 (
+					gen_rtx_GTU (Pmode, regt1, GEN_INT (15)), 
+					regt1, GEN_INT (15), div_label), insn);
+    }
   LABEL_NUSES (div_label) = 1; 
   JUMP_LABEL (cjump) = div_label;
-  emit_insn (gen_rtx_CLOBBER (SImode, reg18));
+  emit_insn (gen_rtx_CLOBBER (Pmode, reg18));
 
-  emit_insn (gen_ashlsi3_bshift (regt1, operands[1], GEN_INT(4)));
-  emit_insn (gen_addsi3 (regt1, regt1, operands[2]));
+  if (TARGET_MB_64) {
+      emit_insn (gen_ashldi3_long (regt1, operands[1], GEN_INT(4)));
+      emit_insn (gen_adddi3 (regt1, regt1, operands[2]));
+    }
+  else  {
+      emit_insn (gen_ashlsi3_bshift (regt1, operands[1], GEN_INT(4)));
+      emit_insn (gen_addsi3 (regt1, regt1, operands[2]));
+    }
   mem_rtx = gen_rtx_MEM (QImode,
                             gen_rtx_PLUS (QImode, regt1, div_table_rtx));
 
@@ -3964,7 +4028,7 @@ insert_wic_for_ilb_runout (rtx_insn *first)
               {
                 insn =
                   emit_insn_before (gen_iprefetch
-                                    (gen_int_mode (addr_offset, SImode)),
+                                    (gen_int_mode (addr_offset, Pmode)),
                                     before_4);
                 recog_memoized (insn);
                 INSN_LOCATION (insn) = INSN_LOCATION (before_4);
@@ -3974,7 +4038,27 @@ insert_wic_for_ilb_runout (rtx_insn *first)
            }
        }
 }
-
+  
+/* Set the names for various arithmetic operations according to the
+ *    MICROBLAZE ABI.  */
+static void
+microblaze_init_libfuncs (void)
+{ 
+  set_optab_libfunc (smod_optab,     SImode, "__modsi3");
+  set_optab_libfunc (sdiv_optab,     SImode, "__divsi3");
+  set_optab_libfunc (smul_optab,     SImode, "__mulsi3");
+  set_optab_libfunc (umod_optab,     SImode, "__umodsi3");
+  set_optab_libfunc (udiv_optab,     SImode, "__udivsi3");
+  
+  if (TARGET_MB_64)
+    {
+      set_optab_libfunc (smod_optab,     DImode, "__moddi3");
+      set_optab_libfunc (sdiv_optab,     DImode, "__divdi3");
+      set_optab_libfunc (smul_optab,     DImode, "__muldi3");
+      set_optab_libfunc (umod_optab,     DImode, "__umoddi3");
+      set_optab_libfunc (udiv_optab,     DImode, "__udivdi3");
+    }
+}       
 /* Insert instruction prefetch instruction at the fall
    through path of the function call.  */
 
@@ -4127,6 +4211,17 @@ microblaze_starting_frame_offset (void)
 #undef TARGET_LRA_P
 #define TARGET_LRA_P hook_bool_void_false
 
+#ifdef TARGET_MB_64
+#undef TARGET_ASM_ALIGNED_DI_OP
+#define TARGET_ASM_ALIGNED_DI_OP "\t.dword\t"
+
+#undef TARGET_ASM_ALIGNED_HI_OP
+#define TARGET_ASM_ALIGNED_HI_OP "\t.hword\t"
+
+#undef TARGET_ASM_ALIGNED_SI_OP
+#define TARGET_ASM_ALIGNED_SI_OP "\t.word\t"
+#endif
+
 #undef TARGET_FRAME_POINTER_REQUIRED
 #define TARGET_FRAME_POINTER_REQUIRED	microblaze_frame_pointer_required
 
@@ -4135,6 +4230,9 @@ microblaze_starting_frame_offset (void)
 
 #undef  TARGET_TRAMPOLINE_INIT
 #define TARGET_TRAMPOLINE_INIT		microblaze_trampoline_init
+
+#undef TARGET_INIT_LIBFUNCS
+#define TARGET_INIT_LIBFUNCS microblaze_init_libfuncs
 
 #undef  TARGET_PROMOTE_FUNCTION_MODE
 #define TARGET_PROMOTE_FUNCTION_MODE 	default_promote_function_mode_always_promote

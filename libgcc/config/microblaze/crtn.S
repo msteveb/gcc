@@ -33,9 +33,9 @@
     .section .init, "ax"
     lw      r15, r0, r1
     rtsd    r15, 8 
-    addik   r1, r1, 8
+    addik   r1, r1, 16
 
     .section .fini, "ax"
     lw      r15, r0, r1
     rtsd    r15, 8 
-    addik   r1, r1, 8    
+    addik   r1, r1, 16   

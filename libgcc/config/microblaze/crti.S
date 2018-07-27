@@ -40,7 +40,7 @@
 
     .align 2
 __init: 
-    addik   r1, r1, -8
+    addik   r1, r1, -16
     sw      r15, r0, r1
     la      r11, r0, _stack
     mts     rshr, r11
@@ -51,5 +51,5 @@ __init:
     .global __fini
     .align 2
 __fini: 
-    addik   r1, r1, -8
+    addik   r1, r1, -16
     sw      r15, r0, r1

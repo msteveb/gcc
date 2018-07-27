@@ -173,7 +173,6 @@ extern enum pipeline_type microblaze_pipe;
 
 /* Generate DWARF exception handling info.  */
 #define DWARF2_UNWIND_INFO 1
-
 /* Don't generate .loc operations.  */
 #define DWARF2_ASM_LINE_DEBUG_INFO 0
 
@@ -206,38 +205,51 @@ extern enum pipeline_type microblaze_pipe;
   ((flag_pic || GLOBAL) ? DW_EH_PE_aligned : DW_EH_PE_absptr)
 
 /* Use DWARF 2 debugging information by default.  */
-#define DWARF2_DEBUGGING_INFO
+#define DWARF2_DEBUGGING_INFO 1
 #define PREFERRED_DEBUGGING_TYPE DWARF2_DEBUG
+#define DWARF2_ADDR_SIZE 4
 
 /* Target machine storage layout */
 
 #define BITS_BIG_ENDIAN 0
 #define BYTES_BIG_ENDIAN (TARGET_LITTLE_ENDIAN == 0)
 #define WORDS_BIG_ENDIAN (BYTES_BIG_ENDIAN)
-#define BITS_PER_WORD           32
-#define UNITS_PER_WORD          4
+//#define BITS_PER_WORD           64
+//Revisit
+#define MAX_BITS_PER_WORD	64
+#define UNITS_PER_WORD          (TARGET_MB_64 ? 8 : 4)
+//#define MIN_UNITS_PER_WORD      (TARGET_MB_64 ? 8 : 4)
+//#define UNITS_PER_WORD          4
 #define MIN_UNITS_PER_WORD      4
 #define INT_TYPE_SIZE           32
 #define SHORT_TYPE_SIZE         16
-#define LONG_TYPE_SIZE          64
+#define LONG_TYPE_SIZE (TARGET_MB_64 ? 64 : 32)
 #define LONG_LONG_TYPE_SIZE     64
 #define FLOAT_TYPE_SIZE         32
 #define DOUBLE_TYPE_SIZE        64
 #define LONG_DOUBLE_TYPE_SIZE   64
-#define POINTER_SIZE            32
-#define PARM_BOUNDARY           32
-#define FUNCTION_BOUNDARY       32
-#define EMPTY_FIELD_BOUNDARY    32
+#define POINTER_SIZE            (TARGET_MB_64 ? 64 : 32)
+//#define WIDEST_HARDWARE_FP_SIZE 64
+//#define POINTERS_EXTEND_UNSIGNED 1
+#define PARM_BOUNDARY           (TARGET_MB_64 ? 64 : 32)
+#define FUNCTION_BOUNDARY       (TARGET_MB_64 ? 64 : 32)
+#define EMPTY_FIELD_BOUNDARY    (TARGET_MB_64 ? 64 : 32)
 #define STRUCTURE_SIZE_BOUNDARY 8
-#define BIGGEST_ALIGNMENT       32
+#define BIGGEST_ALIGNMENT       (TARGET_MB_64 ? 64 : 32) 
 #define STRICT_ALIGNMENT        1
 #define PCC_BITFIELD_TYPE_MATTERS 1
 
+//#define MAX_FIXED_MODE_SIZE GET_MODE_BITSIZE (TARGET_MB_64 ? TImode : DImode)
 #undef SIZE_TYPE
-#define SIZE_TYPE "unsigned int"
+#define SIZE_TYPE (TARGET_MB_64 ? "long unsigned int" : "unsigned int")
 
 #undef PTRDIFF_TYPE
-#define PTRDIFF_TYPE "int"
+#define PTRDIFF_TYPE (TARGET_MB_64 ? "long int" : "int")
+
+/*#undef INTPTR_TYPE
+#define INTPTR_TYPE (TARGET_MB_64 ? "long int" : "int")*/
+#undef UINTPTR_TYPE
+#define UINTPTR_TYPE (TARGET_MB_64 ? "long unsigned int" : "unsigned int")
 
 #define DATA_ALIGNMENT(TYPE, ALIGN)					\
   ((((ALIGN) < BITS_PER_WORD)						\
@@ -253,12 +265,12 @@ extern enum pipeline_type microblaze_pipe;
 #define WORD_REGISTER_OPERATIONS 1
 
 #define LOAD_EXTEND_OP(MODE)  ZERO_EXTEND
-
+/*
 #define PROMOTE_MODE(MODE, UNSIGNEDP, TYPE)	\
   if (GET_MODE_CLASS (MODE) == MODE_INT		\
-      && GET_MODE_SIZE (MODE) < 4)		\
-    (MODE) = SImode;
-
+      && GET_MODE_SIZE (MODE) < (TARGET_MB_64 ? 8 : 4)) \
+    (MODE) = TARGET_MB_64 ? DImode : SImode;
+*/
 /* Standard register usage.  */
 
 /* On the MicroBlaze, we have 32 integer registers */
@@ -438,13 +450,16 @@ extern struct microblaze_frame_info current_frame_info;
 #define FIRST_PARM_OFFSET(FNDECL)		(UNITS_PER_WORD)
 
 #define ARG_POINTER_CFA_OFFSET(FNDECL)		0
+#define DWARF_CIE_DATA_ALIGNMENT -1
 
 #define REG_PARM_STACK_SPACE(FNDECL)  		 microblaze_reg_parm_stack_space(FNDECL)
 
 #define OUTGOING_REG_PARM_STACK_SPACE(FNTYPE)  1
 
-#define STACK_BOUNDARY				32
+#define STACK_BOUNDARY				(TARGET_MB_64 ? 64 : 32)
 
+#define PREFERRED_STACK_BOUNDARY		(TARGET_MB_64 ? 64 : 32)
+ 
 #define NUM_OF_ARGS				6
 
 #define GP_RETURN				(GP_REG_FIRST + MB_ABI_INT_RETURN_VAL_REGNUM)
@@ -455,12 +470,15 @@ extern struct microblaze_frame_info current_frame_info;
 #define MAX_ARGS_IN_REGISTERS			MB_ABI_MAX_ARG_REGS
 
 #define LIBCALL_VALUE(MODE)						\
+  gen_rtx_REG (MODE,GP_RETURN)
+								
+/*#define LIBCALL_VALUE(MODE)						\
   gen_rtx_REG (								\
 	   ((GET_MODE_CLASS (MODE) != MODE_INT				\
 	     || GET_MODE_SIZE (MODE) >= 4)				\
 	    ? (MODE)							\
 	    : SImode), GP_RETURN)
-
+*/
 /* 1 if N is a possible register number for a function value.
    On the MicroBlaze, R2 R3 are the only register thus used.
    Currently, R2 are only implemented  here (C has no complex type)  */
@@ -500,7 +518,7 @@ typedef struct microblaze_args
 /* 4 insns + 2 words of data.  */
 #define TRAMPOLINE_SIZE				(6 * 4)
 
-#define TRAMPOLINE_ALIGNMENT			32
+#define TRAMPOLINE_ALIGNMENT			64
 
 #define REGNO_OK_FOR_BASE_P(regno)		microblaze_regno_ok_for_base_p ((regno), 1)
 
@@ -533,13 +551,13 @@ typedef struct microblaze_args
    addresses which require two reload registers.  */
 #define LEGITIMATE_PIC_OPERAND_P(X)  microblaze_legitimate_pic_operand (X)
 
-#define CASE_VECTOR_MODE			(SImode)
+#define CASE_VECTOR_MODE			(TARGET_MB_64? DImode:SImode)
 
 #ifndef DEFAULT_SIGNED_CHAR
 #define DEFAULT_SIGNED_CHAR			1
 #endif
 
-#define MOVE_MAX				4
+#define MOVE_MAX				(TARGET_MB_64 ? 8 : 4)
 #define MAX_MOVE_MAX				8
 
 #define SLOW_BYTE_ACCESS			1
@@ -549,7 +567,7 @@ typedef struct microblaze_args
 
 #define SHIFT_COUNT_TRUNCATED			1
 
-#define Pmode SImode
+#define Pmode (TARGET_MB_64? DImode:SImode)
 
 #define FUNCTION_MODE   SImode
 
@@ -711,6 +729,7 @@ do {									\
 
 #undef TARGET_ASM_OUTPUT_IDENT
 #define TARGET_ASM_OUTPUT_IDENT microblaze_asm_output_ident
+//#define TARGET_ASM_OUTPUT_IDENT default_asm_output_ident_directive
 
 /* Default to -G 8 */
 #ifndef MICROBLAZE_DEFAULT_GVALUE
