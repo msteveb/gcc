@@ -2268,7 +2268,27 @@ else
 		      (label_ref (match_operand 1))
 		      (pc)))])
 
-(define_insn "branch_zero64"
+(define_insn "branch_zero_64"
+  [(set (pc)
+	(if_then_else (match_operator:SI 0 "ordered_comparison_operator"
+  				 [(match_operand:SI 1 "register_operand" "d")
+                                  (const_int 0)])
+                      (match_operand:SI 2 "pc_or_label_operand" "")
+                      (match_operand:SI 3 "pc_or_label_operand" "")))
+  ]
+  "TARGET_MB_64"
+  {
+    if (operands[3] == pc_rtx) 
+      return "bea%C0i%?\t%z1,%2";
+    else 
+      return "bea%N0i%?\t%z1,%3";
+  }
+  [(set_attr "type"	"branch")
+   (set_attr "mode"	"none")
+   (set_attr "length"	"4")]
+)
+
+(define_insn "long_branch_zero"
   [(set (pc)
 	(if_then_else (match_operator 0 "ordered_comparison_operator"
   				 [(match_operand 1 "register_operand" "d")
@@ -2279,9 +2299,9 @@ else
   "TARGET_MB_64"
   {
     if (operands[3] == pc_rtx) 
-      return "bea%C0i%?\t%z1,%2";
+      return "beal%C0i%?\t%z1,%2";
     else 
-      return "bea%N0i%?\t%z1,%3";
+      return "beal%N0i%?\t%z1,%3";
   }
   [(set_attr "type"	"branch")
    (set_attr "mode"	"none")
@@ -2310,9 +2330,9 @@ else
 
 (define_insn "branch_compare64"
   [(set (pc)
-        (if_then_else (match_operator 0 "cmp_op"
-                                         [(match_operand 1 "register_operand" "d")
-                                          (match_operand 2 "register_operand" "d")
+        (if_then_else (match_operator:SI 0 "cmp_op"
+                                         [(match_operand:SI 1 "register_operand" "d")
+                                          (match_operand:SI 2 "register_operand" "d")
                                          ])
                       (label_ref (match_operand 3))
                       (pc)))
@@ -2343,6 +2363,47 @@ else
 
     operands[0] = gen_rtx_fmt_ee (signed_condition (code), SImode, operands[4], const0_rtx);
     return "bea%C0i%?\tr18,%3";
+  }
+  [(set_attr "type"     "branch")
+   (set_attr "mode"     "none")
+   (set_attr "length"   "12")]
+)
+
+(define_insn "long_branch_compare"
+  [(set (pc)
+        (if_then_else (match_operator 0 "cmp_op"
+                                         [(match_operand 1 "register_operand" "d")
+                                          (match_operand 2 "register_operand" "d")
+                                         ])
+                      (label_ref (match_operand 3))
+                      (pc)))
+  (clobber(reg:DI R_TMP))]
+  "TARGET_MB_64"
+  {
+    operands[4] = gen_rtx_REG (DImode, MB_ABI_ASM_TEMP_REGNUM);
+    enum rtx_code code = GET_CODE (operands[0]);
+
+    if (code == GT || code == LE)
+      {
+        output_asm_insn ("cmpl\tr18,%z1,%z2", operands);
+        code = swap_condition (code);
+      }
+    else if (code == GTU || code == LEU)
+      {
+        output_asm_insn ("cmplu\tr18,%z1,%z2", operands);
+        code = swap_condition (code);
+      }
+    else if (code == GE || code == LT)
+      {
+        output_asm_insn ("cmpl\tr18,%z2,%z1", operands);
+      }
+    else if (code == GEU || code == LTU)
+      {
+        output_asm_insn ("cmplu\tr18,%z2,%z1", operands);
+      }
+
+    operands[0] = gen_rtx_fmt_ee (signed_condition (code), DImode, operands[4], const0_rtx);
+    return "beal%C0i%?\tr18,%3";
   }
   [(set_attr "type"     "branch")
    (set_attr "mode"     "none")
@@ -2430,74 +2491,6 @@ else
   DONE;
 
 })
-
-;; Used to implement comparison instructions
-(define_expand "long_condjump"
-  [(set (pc)
-	(if_then_else (match_operand 0)
-		      (label_ref (match_operand 1))
-		      (pc)))])
-
-(define_insn "long_branch_zero"
-  [(set (pc)
-	(if_then_else (match_operator:DI 0 "ordered_comparison_operator"
-  				 [(match_operand:DI 1 "register_operand" "d")
-                                  (const_int 0)])
-                      (match_operand:DI 2 "pc_or_label_operand" "")
-                      (match_operand:DI 3 "pc_or_label_operand" "")))
-  ]
-  "TARGET_MB_64"
-  {
-    if (operands[3] == pc_rtx) 
-      return "beal%C0i%?\t%z1,%2";
-    else 
-      return "beal%N0i%?\t%z1,%3";
-  }
-  [(set_attr "type"	"branch")
-   (set_attr "mode"	"none")
-   (set_attr "length"	"4")]
-)
-
-(define_insn "long_branch_compare"
-  [(set (pc)
-        (if_then_else (match_operator:DI 0 "cmp_op"
-                                         [(match_operand:DI 1 "register_operand" "d")
-                                          (match_operand:DI 2 "register_operand" "d")
-                                         ])
-                      (label_ref (match_operand 3))
-                      (pc)))
-  (clobber(reg:DI R_TMP))]
-  "TARGET_MB_64"
-  {
-    operands[4] = gen_rtx_REG (DImode, MB_ABI_ASM_TEMP_REGNUM);
-    enum rtx_code code = GET_CODE (operands[0]);
-
-    if (code == GT || code == LE)
-      {
-        output_asm_insn ("cmpl\tr18,%z1,%z2", operands);
-        code = swap_condition (code);
-      }
-    else if (code == GTU || code == LEU)
-      {
-        output_asm_insn ("cmplu\tr18,%z1,%z2", operands);
-        code = swap_condition (code);
-      }
-    else if (code == GE || code == LT)
-      {
-        output_asm_insn ("cmpl\tr18,%z2,%z1", operands);
-      }
-    else if (code == GEU || code == LTU)
-      {
-        output_asm_insn ("cmplu\tr18,%z2,%z1", operands);
-      }
-
-    operands[0] = gen_rtx_fmt_ee (signed_condition (code), DImode, operands[4], const0_rtx);
-    return "beal%C0i%?\tr18,%3";
-  }
-  [(set_attr "type"     "branch")
-   (set_attr "mode"     "none")
-   (set_attr "length"   "12")]
-)
 
 ;;----------------------------------------------------------------
 ;; Unconditional branches

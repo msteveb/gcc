@@ -3695,11 +3695,7 @@ microblaze_expand_conditional_branch (machine_mode mode, rtx operands[])
     {
       comp_reg = cmp_op0;
       condition = gen_rtx_fmt_ee (signed_condition (code), mode, comp_reg, const0_rtx);
-      if (mode == Pmode)
-        emit_jump_insn (gen_condjump (condition, label1));
-      else
-        emit_jump_insn (gen_long_condjump (condition, label1));
-
+      emit_jump_insn (gen_condjump (condition, label1));
     }
 
   else if (code == EQ || code == NE)
@@ -3710,10 +3706,7 @@ microblaze_expand_conditional_branch (machine_mode mode, rtx operands[])
       else
         emit_insn (gen_xordi3 (comp_reg, cmp_op0, cmp_op1));
       condition = gen_rtx_fmt_ee (signed_condition (code), mode, comp_reg, const0_rtx);
-      if (mode == SImode)
-        emit_jump_insn (gen_condjump (condition, label1));
-      else
-        emit_jump_insn (gen_long_condjump (condition, label1));
+      emit_jump_insn (gen_condjump (condition, label1));
     }
   else
     {
@@ -3746,10 +3739,7 @@ microblaze_expand_conditional_branch_reg (machine_mode mode, rtx operands[])
       comp_reg = cmp_op0;
       condition = gen_rtx_fmt_ee (signed_condition (code),
                                   mode, comp_reg, const0_rtx);
-      if (mode == SImode)
-        emit_jump_insn (gen_condjump (condition, label1));
-      else
-        emit_jump_insn (gen_long_condjump (condition, label1));
+      emit_jump_insn (gen_condjump (condition, label1));
     }
   else if (code == EQ)
     {
@@ -3764,10 +3754,7 @@ microblaze_expand_conditional_branch_reg (machine_mode mode, rtx operands[])
                                            cmp_op1));
 	}
       condition = gen_rtx_EQ (mode, comp_reg, const0_rtx);
-      if (mode == SImode)
-        emit_jump_insn (gen_condjump (condition, label1));
-      else
-        emit_jump_insn (gen_long_condjump (condition, label1));
+      emit_jump_insn (gen_condjump (condition, label1));
  
     }
   else if (code == NE)
@@ -3783,10 +3770,7 @@ microblaze_expand_conditional_branch_reg (machine_mode mode, rtx operands[])
                                            cmp_op1));
 	}
       condition = gen_rtx_NE (mode, comp_reg, const0_rtx);
-      if (mode == SImode)
-        emit_jump_insn (gen_condjump (condition, label1));
-      else
-        emit_jump_insn (gen_long_condjump (condition, label1));
+      emit_jump_insn (gen_condjump (condition, label1));
     }
   else
     {
@@ -3828,7 +3812,7 @@ microblaze_expand_conditional_branch_df (rtx operands[])
 
   emit_insn (gen_cstoredf4 (comp_reg, operands[0], cmp_op0, cmp_op1));
   condition = gen_rtx_NE (Pmode, comp_reg, const0_rtx);
-  emit_jump_insn (gen_long_condjump (condition, operands[3]));
+  emit_jump_insn (gen_condjump (condition, operands[3]));
 }
 
 /* Implement TARGET_FRAME_POINTER_REQUIRED.  */
