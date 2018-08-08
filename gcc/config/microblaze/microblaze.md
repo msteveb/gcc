@@ -2224,8 +2224,8 @@ else
 (define_expand "cbranchsi4"
   [(set (pc)
         (if_then_else (match_operator 0 "ordered_comparison_operator"
-                       [(match_operand 1 "register_operand")
-                        (match_operand 2 "arith_operand" "I,i")])
+                       [(match_operand:SI 1 "register_operand")
+                        (match_operand:SI 2 "arith_operand" "I,i")])
                       (label_ref (match_operand 3 ""))
                       (pc)))]
   ""
