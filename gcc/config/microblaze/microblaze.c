@@ -2241,9 +2241,14 @@ compute_frame_size (HOST_WIDE_INT size)
 
   total_size += gp_reg_size;
 
-  /* Add 4 bytes for MSR.  */
+  /* Add 4/8 bytes for MSR.  */
   if (microblaze_is_interrupt_variant ())
-    total_size += 4;
+    {
+      if (TARGET_MB_64)
+        total_size += 8;
+      else
+        total_size += 4;
+    }
 
   /* No space to be allocated for link register in leaf functions with no other
      stack requirements.  */
@@ -2527,7 +2532,6 @@ print_operand (FILE * file, rtx op, int letter)
   else if (letter == 'h' || letter == 'j')
     {
       long val[2];
-      int val1[2];
       long l[2];
       if (code == CONST_DOUBLE)
 	{
@@ -2542,10 +2546,10 @@ print_operand (FILE * file, rtx op, int letter)
 	}
       else if (code == CONST_INT || code == CONST)// || code == SYMBOL_REF ||code == LABEL_REF)
         {
-	  val1[0] = (INTVAL (op) & 0xffffffff00000000LL) >> 32;
-	  val1[1] = INTVAL (op) & 0x00000000ffffffffLL;
+	  val[0] = (INTVAL (op) & 0xffffffff00000000LL) >> 32;
+	  val[1] = INTVAL (op) & 0x00000000ffffffffLL;
         }
-      fprintf (file, "0x%8.8lx", (letter == 'h') ? val1[0] : val1[1]);
+      fprintf (file, "0x%8.8lx", (letter == 'h') ? val[0] : val[1]);
     }
   else if (code == CONST_DOUBLE)
     {

@@ -1094,7 +1094,7 @@
       case 1:
       case 2:
         {
-          output_asm_insn ("ll%i1\t%0,%1", operands);
+          output_asm_insn ("lw%i1\t%0,%1", operands);
           return "sextl32\t%0,%0";
         }
     } 
