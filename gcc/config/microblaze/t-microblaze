@@ -1,12 +1,9 @@
-MULTILIB_OPTIONS = mxl-barrel-shift mno-xl-soft-mul mxl-multiply-high mlittle-endian m64
-MULTILIB_DIRNAMES = bs m mh le m64
-MULTILIB_EXCEPTIONS = *mxl-barrel-shift/mxl-multiply-high mxl-multiply-high
-MULTILIB_EXCEPTIONS += *mxl-barrel-shift/mxl-multiply-high/mlittle-endian
-MULTILIB_EXCEPTIONS += *mxl-barrel-shift/mxl-multiply-high/mlittle-endian/m64
-MULTILIB_EXCEPTIONS += *mxl-barrel-shift/mxl-multiply-high/m64 mxl-multiply-high
-MULTILIB_EXCEPTIONS += mxl-multiply-high/mlittle-endian
-MULTILIB_EXCEPTIONS += mxl-multiply-high/m64
-MULTILIB_EXCEPTIONS += *mxl-multiply-high/mlittle-endian/m64
+MULTILIB_OPTIONS = m64 mxl-barrel-shift mlittle-endian mno-xl-soft-mul mxl-multiply-high
+MULTILIB_DIRNAMES = m64 bs le m mh
+MULTILIB_EXCEPTIONS = *m64/mxl-multiply-high mxl-multiply-high
+MULTILIB_EXCEPTIONS += *mxl-barrel-shift/mxl-multiply-high mxl-multiply-high
+MULTILIB_EXCEPTIONS += *mlittle-endian/mxl-multiply-high mxl-multiply-high
+MULTILIB_EXCEPTIONS += *m64/mxl-barrel-shift/mlittle-endian/mxl-multiply-high
 
 # Extra files
 microblaze-c.o: $(srcdir)/config/microblaze/microblaze-c.c \

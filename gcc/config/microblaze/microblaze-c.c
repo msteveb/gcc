@@ -102,6 +102,7 @@ microblaze_cpp_define (cpp_reader *pfile)
     }
   if (TARGET_MB_64)
     {
+      builtin_define ("__microblaze64");
       builtin_define ("__arch64__");
       builtin_define ("__microblaze64__");
       builtin_define ("__MICROBLAZE64__");
