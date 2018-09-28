@@ -525,6 +525,15 @@
   (set_attr "mode"      "SF")
   (set_attr "length"    "4")])
 
+(define_insn "floatdidf2"
+  [(set (match_operand:DF 0 "register_operand" "=d")
+        (float:DF (match_operand:DI 1 "register_operand" "d")))]
+  "TARGET_MB_64"
+  "dbl\t%0,%1"
+  [(set_attr "type"     "fcvt")
+  (set_attr "mode"      "DF")
+  (set_attr "length"    "4")])
+
 (define_insn "fix_truncsfsi2"
   [(set (match_operand:SI 0 "register_operand" "=d")
         (fix:SI (match_operand:SF 1 "register_operand" "d")))]
@@ -1298,7 +1307,7 @@
 (define_insn "movdi_long_int"
   [(set (match_operand:DI 0 "nonimmediate_operand" "=d")
 	(match_operand:DI 1 "general_operand"      "i"))]
-  ""
+  "TARGET_MB_64"
   "addlik\t%0,r0,%h1\n\tbsllli\t%0,%0,32\n\taddlik\t%0,%0,%j1 #li => la";
   [(set_attr "type"	"no_delay_arith")
   (set_attr "mode"	"DI")
@@ -1581,7 +1590,7 @@
           return "ll%i1\t%0,%1";
       case 3:
       {
-	return "addlik\t%0,r0,%h1 \n\tbsllli\t%0,%0,32\n\taddlik\t%0,%0,%j1 #Xfer Lo";
+	return "addlik\t%0,r0,%j1 \n\tbsllli\t%0,%0,32\n\taddlik\t%0,%0,%h1 #Xfer Lo";
       }
       case 5:
 	return "sl%i0\t%1,%0";
@@ -2371,9 +2380,9 @@ else
 
 (define_insn "long_branch_compare"
   [(set (pc)
-        (if_then_else (match_operator 0 "cmp_op"
-                                         [(match_operand 1 "register_operand" "d")
-                                          (match_operand 2 "register_operand" "d")
+        (if_then_else (match_operator:DI 0 "cmp_op"
+                                         [(match_operand:DI 1 "register_operand" "d")
+                                          (match_operand:DI 2 "register_operand" "d")
                                          ])
                       (label_ref (match_operand 3))
                       (pc)))
@@ -2495,6 +2504,20 @@ else
 ;;----------------------------------------------------------------
 ;; Unconditional branches
 ;;----------------------------------------------------------------
+(define_insn "jump_64"
+  [(set (pc)
+	(label_ref (match_operand 0 "" "")))]
+  "TARGET_MB_64"
+  {
+    if (GET_CODE (operands[0]) == REG)
+        return "brea%?\t%0";
+    else	
+        return "breai%?\t%l0";
+  }
+  [(set_attr "type"	"jump")
+  (set_attr "mode"	"none")
+  (set_attr "length"	"4")])
+
 (define_insn "jump"
   [(set (pc)
 	(label_ref (match_operand 0 "" "")))]
@@ -2538,19 +2561,28 @@ else
   (use (label_ref (match_operand 1 "" "")))]
   ""
   {
-    //gcc_assert (GET_MODE (operands[0]) == Pmode);
-
+    gcc_assert (GET_MODE (operands[0]) == Pmode);
+    
     if (!flag_pic)
-      emit_jump_insn (gen_tablejump_internal1 (operands[0], operands[1]));
-    else
-      emit_jump_insn (gen_tablejump_internal3 (operands[0], operands[1]));
+      {
+ 	if (!TARGET_MB_64)
+          emit_jump_insn (gen_tablejump_internal1 (operands[0], operands[1]));
+	else
+          emit_jump_insn (gen_tablejump_internal2 (operands[0], operands[1]));
+      }
+    else {
+ 	if (!TARGET_MB_64)
+          emit_jump_insn (gen_tablejump_internal3 (operands[0], operands[1]));
+	else
+          emit_jump_insn (gen_tablejump_internal4 (operands[0], operands[1]));
+      }
     DONE;
   }
 )
 
 (define_insn "tablejump_internal1"
   [(set (pc)
-	(match_operand 0 "register_operand" "d"))
+	(match_operand:SI 0 "register_operand" "d"))
   (use (label_ref (match_operand 1 "" "")))]
   ""
   "bra%?\t%0 "
@@ -2558,11 +2590,21 @@ else
   (set_attr "mode"	"none")
   (set_attr "length"	"4")])
 
+(define_insn "tablejump_internal2"
+  [(set (pc)
+	(match_operand:DI 0 "register_operand" "d"))
+  (use (label_ref (match_operand 1 "" "")))]
+  "TARGET_MB_64"
+  "bra%?\t%0 "
+  [(set_attr "type"	"jump")
+  (set_attr "mode"	"none")
+  (set_attr "length"	"4")])
+
 (define_expand "tablejump_internal3"
   [(parallel [(set (pc)
-		   (plus (match_operand 0 "register_operand" "d")
-			    (label_ref (match_operand:SI 1 "" ""))))
-             (use (label_ref (match_dup 1)))])]
+		   (plus:SI (match_operand:SI 0 "register_operand" "d")
+			    (label_ref:SI (match_operand:SI 1 "" ""))))
+             (use (label_ref:SI (match_dup 1)))])]
   ""
   ""
 )
@@ -2592,6 +2634,23 @@ else
   ""
   ""
 )
+
+(define_insn ""
+ [(set (pc)
+	(plus:DI (match_operand:DI 0 "register_operand" "d")
+		 (label_ref:DI (match_operand 1 "" ""))))
+  (use (label_ref:DI (match_dup 1)))]
+ "TARGET_MB_64 && NEXT_INSN (as_a <rtx_insn *> (operands[1])) != 0
+  && GET_CODE (PATTERN (NEXT_INSN (as_a <rtx_insn *> (operands[1])))) == ADDR_DIFF_VEC
+  && flag_pic"
+  {
+    output_asm_insn ("addlk\t%0,%0,r20",operands);
+    return "bra%?\t%0";
+}
+ [(set_attr "type"	"jump")
+  (set_attr "mode"	"none")
+  (set_attr "length"	"4")])
+
 
 ;;----------------------------------------------------------------
 ;; Function prologue/epilogue and stack allocation
@@ -3097,7 +3156,7 @@ else
 ;; The insn to set GOT. The hardcoded number "8" accounts for $pc difference
 ;; between "mfs" and "addik" instructions.
 (define_insn "set_got"
-  [(set (match_operand:SI 0 "register_operand" "=r")
+  [(set (match_operand 0 "register_operand" "=r")
     (unspec:SI [(const_int 0)] UNSPEC_SET_GOT))]
   ""
   "mfs\t%0,rpc\n\taddik\t%0,%0,_GLOBAL_OFFSET_TABLE_+8"

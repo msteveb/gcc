@@ -2536,7 +2536,12 @@ print_operand (FILE * file, rtx op, int letter)
       if (code == CONST_DOUBLE)
 	{
 	  if (GET_MODE (op) == DFmode)
-	    REAL_VALUE_TO_TARGET_DOUBLE (*CONST_DOUBLE_REAL_VALUE (op), val);
+            {
+  	      if (TARGET_MB_64)
+	        REAL_VALUE_TO_TARGET_LONG_DOUBLE (*CONST_DOUBLE_REAL_VALUE (op), val);
+	      else
+	        REAL_VALUE_TO_TARGET_DOUBLE (*CONST_DOUBLE_REAL_VALUE (op), val);
+	    }
 	  else
 	    {
               REAL_VALUE_TO_TARGET_DOUBLE (*CONST_DOUBLE_REAL_VALUE (op), l);
@@ -3874,7 +3879,10 @@ microblaze_expand_divide (rtx operands[])
                             gen_rtx_PLUS (QImode, regt1, div_table_rtx));
 
   insn = emit_insn (gen_zero_extendqisi2(operands[0],mem_rtx));
-  jump = emit_jump_insn_after (gen_jump (div_end_label), insn); 
+  if (TARGET_MB_64) 
+    jump = emit_jump_insn_after (gen_jump_64 (div_end_label), insn);
+  else 
+    jump = emit_jump_insn_after (gen_jump (div_end_label), insn); 
   JUMP_LABEL (jump) = div_end_label;
   LABEL_NUSES (div_end_label) = 1; 
   emit_barrier ();

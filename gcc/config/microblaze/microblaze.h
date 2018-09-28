@@ -892,10 +892,17 @@ do {									 \
 /* We do this to save a few 10s of code space that would be taken up
    by the call_FUNC () wrappers, used by the generic CRT_CALL_STATIC_FUNCTION
    definition in crtstuff.c.  */
+#ifdef __arch64__
+#define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)	\
+    asm ( SECTION_OP "\n"                               \
+          "\tbrealid   r15, " #FUNC "\n\t nop\n"         \
+          TEXT_SECTION_ASM_OP);
+#else
 #define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)	\
     asm ( SECTION_OP "\n"                               \
           "\tbrlid   r15, " #FUNC "\n\t nop\n"         \
           TEXT_SECTION_ASM_OP);
+#endif
 
 /* We need to group -lm as well, since some Newlib math functions 
    reference __errno!  */

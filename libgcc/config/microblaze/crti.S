@@ -33,11 +33,32 @@
     .section .init, "ax"
     .global __init
 
+#ifdef __arch64__
+    .weak _stack
+    .set  _stack, 0xffffffffffffffff
+    .weak _stack_end
+    .set  _stack_end, 0
+
+    .align 3
+__init: 
+    addlik  r1, r1, -32
+    sl      r15, r0, r1
+    addlik  r11, r0, _stack
+    mts     rshr, r11
+    addlik  r11, r0, _stack_end
+    mts     rslr, r11
+
+    .section .fini, "ax"
+    .global __fini
+    .align 3
+__fini: 
+    addlik   r1, r1, -32
+    sl       r15, r0, r1
+#else
     .weak _stack
     .set  _stack, 0xffffffff
     .weak _stack_end
     .set  _stack_end, 0
-
     .align 2
 __init: 
     addik   r1, r1, -16
@@ -53,3 +74,4 @@ __init:
 __fini: 
     addik   r1, r1, -16
     sw      r15, r0, r1
+#endif
