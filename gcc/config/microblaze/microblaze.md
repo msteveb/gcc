@@ -525,6 +525,66 @@
   (set_attr "mode"      "SF")
   (set_attr "length"    "4")])
 
+(define_insn "fix_truncsfsi2"
+  [(set (match_operand:SI 0 "register_operand" "=d")
+        (fix:SI (match_operand:SF 1 "register_operand" "d")))]
+  "TARGET_HARD_FLOAT && TARGET_FLOAT_CONVERT"
+  "fint\t%0,%1"
+  [(set_attr "type"     "fint")
+  (set_attr "mode"      "SF")
+  (set_attr "length"    "4")])
+
+
+(define_insn "adddf3"
+  [(set (match_operand:DF 0 "register_operand" "=d")
+        (plus:DF (match_operand:DF 1 "register_operand" "d")
+                 (match_operand:DF 2 "register_operand" "d")))]
+  "TARGET_MB_64"
+  "dadd\t%0,%1,%2"
+  [(set_attr "type"     "fadd")
+  (set_attr "mode"      "DF")
+  (set_attr "length"    "4")])
+
+(define_insn "subdf3"
+  [(set (match_operand:DF 0 "register_operand" "=d")
+        (minus:DF (match_operand:DF 1 "register_operand" "d")
+                  (match_operand:DF 2 "register_operand" "d")))]
+  "TARGET_MB_64"
+  "drsub\t%0,%2,%1"
+  [(set_attr "type"     "frsub")
+  (set_attr "mode"      "DF")
+  (set_attr "length"    "4")])
+
+(define_insn "muldf3"
+  [(set (match_operand:DF 0 "register_operand" "=d")
+        (mult:DF (match_operand:DF 1 "register_operand" "d")
+                 (match_operand:DF 2 "register_operand" "d")))]
+  "TARGET_MB_64"
+  "dmul\t%0,%1,%2"
+  [(set_attr "type"     "fmul")
+  (set_attr "mode"      "DF")
+  (set_attr "length"    "4")])
+
+(define_insn "divdf3"
+  [(set (match_operand:DF 0 "register_operand" "=d")
+        (div:DF (match_operand:DF 1 "register_operand" "d")
+                (match_operand:DF 2 "register_operand" "d")))]
+  "TARGET_MB_64"
+  "ddiv\t%0,%2,%1"
+  [(set_attr "type"     "fdiv")
+  (set_attr "mode"      "DF")
+  (set_attr "length"    "4")])
+
+
+(define_insn "sqrtdf2"
+  [(set (match_operand:DF 0 "register_operand" "=d")
+        (sqrt:DF (match_operand:DF 1 "register_operand" "d")))]
+  "TARGET_MB_64"
+  "dsqrt\t%0,%1"
+  [(set_attr "type"     "fsqrt")
+  (set_attr "mode"      "DF")
+  (set_attr "length"    "4")])
+
 (define_insn "floatdidf2"
   [(set (match_operand:DF 0 "register_operand" "=d")
         (float:DF (match_operand:DI 1 "register_operand" "d")))]
@@ -534,13 +594,13 @@
   (set_attr "mode"      "DF")
   (set_attr "length"    "4")])
 
-(define_insn "fix_truncsfsi2"
-  [(set (match_operand:SI 0 "register_operand" "=d")
-        (fix:SI (match_operand:SF 1 "register_operand" "d")))]
-  "TARGET_HARD_FLOAT && TARGET_FLOAT_CONVERT"
-  "fint\t%0,%1"
-  [(set_attr "type"     "fint")
-  (set_attr "mode"      "SF")
+(define_insn "floatdfdi2"
+  [(set (match_operand:DI 0 "register_operand" "=d")
+        (float:DI (match_operand:DF 1 "register_operand" "d")))]
+  "TARGET_MB_64"
+  "dlong\t%0,%1"
+  [(set_attr "type"     "fcvt")
+  (set_attr "mode"      "DI")
   (set_attr "length"    "4")])
 
 ;;----------------------------------------------------------------
@@ -658,8 +718,8 @@
   "TARGET_MB_64"
   "@
    rsubl\t%0,%2,%1
-   addik\t%0,%z1,-%2
-   addik\t%0,%z1,-%2"
+   addlik\t%0,%z1,-%2
+   addlik\t%0,%z1,-%2"
   [(set_attr "type"	"arith,no_delay_arith,no_delay_arith")
   (set_attr "mode"	"DI")
   (set_attr "length"	"4,4,4")])
