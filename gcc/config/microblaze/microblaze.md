@@ -441,6 +441,9 @@
         (bswap:SI (match_operand:SI 1 "register_operand" "r")))]
   "TARGET_REORDER"
   "swapb %0, %1"
+  [(set_attr "type"	"no_delay_arith")
+   (set_attr "mode"	"SI")
+   (set_attr "length"	"4")]
 )
 
 (define_insn "bswaphi2"
@@ -449,6 +452,9 @@
   "TARGET_REORDER"
   "swapb %0, %1
    swaph %0, %0"
+  [(set_attr "type"	"no_delay_arith")
+   (set_attr "mode"	"SI")
+   (set_attr "length"	"8")]
 )
 
 ;;----------------------------------------------------------------
