@@ -41,6 +41,16 @@
 	.globl	__umodsi3
 	.ent	__umodsi3
 	.type	__umodsi3,@function
+#ifdef __arch64__
+        .align 3
+__umodsi3:
+	.frame	r1,0,r15	
+
+	addik	r1,r1,-24
+	swi	r29,r1,0
+	swi	r30,r1,8
+	swi	r31,r1,16
+#else
 __umodsi3:
 	.frame	r1,0,r15	
 
@@ -48,7 +58,7 @@ __umodsi3:
 	swi	r29,r1,0
 	swi	r30,r1,4
 	swi	r31,r1,8
-
+#endif
 	BEQI	r6,$LaDiv_By_Zero         # Div_by_Zero   # Division Error
 	BEQId	r5,$LaResult_Is_Zero     # Result is Zero 
 	ADDIK 	r3,r0,0                  # Clear div
@@ -101,6 +111,17 @@ $LaLOOP_END:
 $LaDiv_By_Zero:
 $LaResult_Is_Zero:
 	or 	r3,r0,r0   # set result to 0
+
+#ifdef __arch64__
+$LaRETURN_HERE:
+# Restore values of CSRs and that of r3 and the divisor and the dividend
+	lli 	r29,r1,0
+	lli 	r30,r1,8
+	lli 	r31,r1,16
+	addlik 	r1,r1,24
+	rtsd 	r15,8
+	nop
+#else
 $LaRETURN_HERE:
 # Restore values of CSRs and that of r3 and the divisor and the dividend
 	lwi 	r29,r1,0
@@ -108,5 +129,6 @@ $LaRETURN_HERE:
 	lwi 	r31,r1,8
 	rtsd 	r15,8
 	addik 	r1,r1,12
+#endif
 .end __umodsi3
 	.size	__umodsi3, . - __umodsi3

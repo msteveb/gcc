@@ -41,6 +41,9 @@
 	.globl	__mulsi3
 	.ent	__mulsi3
 	.type	__mulsi3,@function
+#ifdef __arch64__
+        .align 3
+#endif
 __mulsi3:
 	.frame	r1,0,r15
 	add	r3,r0,r0
