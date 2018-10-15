@@ -207,7 +207,7 @@ extern enum pipeline_type microblaze_pipe;
 /* Use DWARF 2 debugging information by default.  */
 #define DWARF2_DEBUGGING_INFO 1
 #define PREFERRED_DEBUGGING_TYPE DWARF2_DEBUG
-#define DWARF2_ADDR_SIZE 4
+#define DWARF2_ADDR_SIZE (TARGET_MB_64 ? 8 : 4)
 
 /* Target machine storage layout */
 
