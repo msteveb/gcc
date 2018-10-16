@@ -47,9 +47,9 @@ __umodsi3:
 	.frame	r1,0,r15	
 
 	addik	r1,r1,-24
-	swi	r29,r1,0
-	swi	r30,r1,8
-	swi	r31,r1,16
+	sli	r29,r1,0
+	sli	r30,r1,8
+	sli	r31,r1,16
 #else
 __umodsi3:
 	.frame	r1,0,r15	
