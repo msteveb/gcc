@@ -119,6 +119,7 @@ $LaRETURN_HERE:
 	lwi	r30,r1,8
 	lwi	r31,r1,12
 	rtsd	r15,8
+	addik	r1,r1,16
 #endif
         .end __modsi3
 	.size	__modsi3, . - __modsi3
