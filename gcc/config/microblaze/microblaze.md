@@ -600,9 +600,9 @@
   (set_attr "mode"      "DF")
   (set_attr "length"    "4")])
 
-(define_insn "floatdfdi2"
+(define_insn "fix_truncdfdi2"
   [(set (match_operand:DI 0 "register_operand" "=d")
-        (float:DI (match_operand:DF 1 "register_operand" "d")))]
+        (fix:DI (fix:DF (match_operand:DF 1 "register_operand" "d"))))]
   "TARGET_MB_64"
   "dlong\t%0,%1"
   [(set_attr "type"     "fcvt")
