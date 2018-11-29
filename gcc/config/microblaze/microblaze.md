@@ -646,8 +646,8 @@
   if (TARGET_MB_64) 
    {
      if (GET_CODE (operands[2]) == CONST_INT &&
-       INTVAL(operands[2]) < (long)-549755813888 &&
-	INTVAL(operands[2]) > (long)549755813887)
+       INTVAL(operands[2]) < (long long)-549755813888 &&
+	INTVAL(operands[2]) > (long long)549755813887)
       FAIL;
    }
 })
@@ -1264,7 +1264,7 @@
 	(match_operand:DI 1 "immediate_operand" "J,I,Mnis"))]
   "TARGET_MB_64 && (register_operand (operands[0], DImode) && 
            (GET_CODE (operands[1]) == CONST_INT && 
-                 (INTVAL (operands[1]) <= (long)549755813887 && INTVAL (operands[1]) >= (long)-549755813888)))"  
+                 (INTVAL (operands[1]) <= (long long)549755813887 && INTVAL (operands[1]) >= (long long)-549755813888)))"  
   "@
    addlk\t%0,r0,r0\t
    addlik\t%0,r0,%1\t #N1 %X1
@@ -1298,7 +1298,7 @@
      case 1:
      case 2:
         if (GET_CODE (operands[1]) == CONST_INT && 
-	    (INTVAL (operands[1]) > (long)549755813887 || INTVAL (operands[1]) < (long)-549755813888))
+	    (INTVAL (operands[1]) > (long long)549755813887 || INTVAL (operands[1]) < (long long)-549755813888))
  	  return "addlik\t%0,r0,%h1\n\tbsllli\t%0,%0,32\n\taddlik\t%0,%0,%j1 #li => la";
         else	
 	  return "addlik\t%0,r0,%1";
