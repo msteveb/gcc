@@ -2345,11 +2345,11 @@ else
 
 (define_insn "branch_zero_64"
   [(set (pc)
-	(if_then_else (match_operator:SI 0 "ordered_comparison_operator"
+	(if_then_else (match_operator 0 "ordered_comparison_operator"
   				 [(match_operand:SI 1 "register_operand" "d")
                                   (const_int 0)])
-                      (match_operand:SI 2 "pc_or_label_operand" "")
-                      (match_operand:SI 3 "pc_or_label_operand" "")))
+                      (match_operand 2 "pc_or_label_operand" "")
+                      (match_operand 3 "pc_or_label_operand" "")))
   ]
   "TARGET_MB_64"
   {
@@ -2365,11 +2365,11 @@ else
 
 (define_insn "long_branch_zero"
   [(set (pc)
-	(if_then_else (match_operator 0 "ordered_comparison_operator"
-  				 [(match_operand 1 "register_operand" "d")
+	(if_then_else (match_operator:DI 0 "ordered_comparison_operator"
+				 [(match_operand:DI 1 "register_operand" "d")
                                   (const_int 0)])
-                      (match_operand 2 "pc_or_label_operand" "")
-                      (match_operand 3 "pc_or_label_operand" "")))
+                      (match_operand:DI 2 "pc_or_label_operand" "")
+                      (match_operand:DI 3 "pc_or_label_operand" "")))
   ]
   "TARGET_MB_64"
   {
