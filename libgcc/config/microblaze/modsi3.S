@@ -62,40 +62,72 @@ __modsi3:
 	swi	r31,r1,12
 #endif
 
+#ifdef __arch64__
+        BEAEQI    r6,$LaDiv_By_Zero       # Div_by_Zero   # Division Error
+        BEAEQI    r5,$LaResult_Is_Zero    # Result is Zero
+        BEAGEId   r5,$LaR5_Pos
+#else
 	BEQI	r6,$LaDiv_By_Zero       # Div_by_Zero   # Division Error
 	BEQI	r5,$LaResult_Is_Zero    # Result is Zero 
 	BGEId	r5,$LaR5_Pos 
+#endif
 	ADD	r28,r5,r0               # Get the sign of the result [ Depends only on the first arg]
 	RSUBI	r5,r5,0	                # Make r5 positive
 $LaR5_Pos:
-	BGEI	r6,$LaR6_Pos
+#ifdef __arch64__
+	BEAGEI	r6,$LaR6_Pos
+#else
+        BGEI    r6,$LaR6_Pos
+#endif
 	RSUBI	r6,r6,0	    # Make r6 positive
 $LaR6_Pos:
 	ADDIK	r3,r0,0      # Clear mod
 	ADDIK	r30,r0,0     # clear div
-	BLTId	r5,$LaDIV2   # If r5 is still negative (0x80000000), skip
+#ifdef __arch64__
+	BEALTId	r5,$LaDIV2   # If r5 is still negative (0x80000000), skip
 			     # the first bit search.
+#else
+        BLTId   r5,$LaDIV2   # If r5 is still negative (0x80000000), skip
+                             # the first bit search.
+#endif
 	ADDIK	r29,r0,32    # Initialize the loop count
    # First part try to find the first '1' in the r5
 $LaDIV1:
 	ADD	r5,r5,r5         # left shift logical r5
-	BGEID	r5,$LaDIV1       #
+#ifdef __arch64__
+	BEAGEID	r5,$LaDIV1       #
+#else
+        BGEID   r5,$LaDIV1       #
+#endif
 	ADDIK	r29,r29,-1
 $LaDIV2:
 	ADD	r5,r5,r5         # left shift logical  r5 get the '1' into the Carry
 	ADDC	r3,r3,r3         # Move that bit into the Mod register
 	rSUB	r31,r6,r3        # Try to subtract (r30 a r6)
+#ifdef __arch64__
+        BEALTi    r31,$LaMOD_TOO_SMALL
+#else
 	BLTi	r31,$LaMOD_TOO_SMALL
+#endif
 	OR	r3,r0,r31       # Move the r31 to mod since the result was positive
 	ADDIK	r30,r30,1
 $LaMOD_TOO_SMALL:
 	ADDIK	r29,r29,-1
+#ifdef __arch64__
+        BEAEQi    r29,$LaLOOP_END
+        ADD     r30,r30,r30         # Shift in the '1' into div
+        BREAI     $LaDIV2          # Div2
+$LaLOOP_END:
+        BEAGEI    r28,$LaRETURN_HERE
+        BREAId    $LaRETURN_HERE
+#else
 	BEQi	r29,$LaLOOP_END
 	ADD	r30,r30,r30         # Shift in the '1' into div
 	BRI	$LaDIV2          # Div2
 $LaLOOP_END:
 	BGEI	r28,$LaRETURN_HERE
 	BRId	$LaRETURN_HERE
+#endif
 	rsubi	r3,r3,0 # Negate the result
 $LaDiv_By_Zero:
 $LaResult_Is_Zero:
@@ -108,7 +140,7 @@ $LaRETURN_HERE:
 	lli	r29,r1,8
 	lli	r30,r1,16
 	lli	r31,r1,24
-	addik	r1,r1,32
+	addlik	r1,r1,32
 	rtsd	r15,8
 	nop
 #else
