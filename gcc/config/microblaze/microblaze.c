@@ -3868,7 +3868,7 @@ microblaze_expand_divide (rtx operands[])
   emit_insn (gen_rtx_CLOBBER (Pmode, reg18));
 
   if (TARGET_MB_64) {
-      emit_insn (gen_ashldi3_long (regt1, operands[1], GEN_INT(4)));
+      emit_insn (gen_ashldi3 (regt1, operands[1], GEN_INT(4)));
       emit_insn (gen_adddi3 (regt1, regt1, operands[2]));
     }
   else  {
